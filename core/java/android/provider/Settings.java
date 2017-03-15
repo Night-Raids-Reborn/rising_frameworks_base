@@ -5993,6 +5993,12 @@ public final class Settings {
         public static final String FP_ERROR_VIBRATE = "fp_error_vibrate";
 
         /**
+         * Whether to display roaming indicator for roaming signal connection
+         * @hide
+         */
+        public static final String ROAMING_INDICATOR_ICON = "roaming_indicator_icon";
+
+        /**
          * Keys we no longer back up under the current schema, but want to continue to
          * process when restoring historical backup datasets.
          *
