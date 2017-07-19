@@ -51,6 +51,7 @@ import com.android.internal.annotations.VisibleForTesting;
 import com.android.settingslib.AccessibilityContentDescriptions;
 import com.android.settingslib.SignalIcon.MobileIconGroup;
 import com.android.settingslib.graph.SignalDrawable;
+import com.android.settingslib.mobile.MobileMappings;
 import com.android.settingslib.mobile.MobileMappings.Config;
 import com.android.settingslib.mobile.MobileStatusTracker;
 import com.android.settingslib.mobile.MobileStatusTracker.MobileStatus;
@@ -87,6 +88,8 @@ public class MobileSignalController extends SignalController<MobileState, Mobile
             "system:" + Settings.System.ROAMING_INDICATOR_ICON;
     private static final String DATA_DISABLED_ICON =
             "system:" + Settings.System.DATA_DISABLED_ICON;
+    private static final String SHOW_FOURG_ICON =
+            "system:" + Settings.System.SHOW_FOURG_ICON;
 
     private final TelephonyManager mPhone;
     private final CarrierConfigTracker mCarrierConfigTracker;
@@ -262,6 +265,7 @@ public class MobileSignalController extends SignalController<MobileState, Mobile
 
         Dependency.get(TunerService.class).addTunable(this, ROAMING_INDICATOR_ICON);
         Dependency.get(TunerService.class).addTunable(this, DATA_DISABLED_ICON);
+        Dependency.get(TunerService.class).addTunable(this, SHOW_FOURG_ICON);
     }
 
     @Override
@@ -276,6 +280,11 @@ public class MobileSignalController extends SignalController<MobileState, Mobile
                 mDataDisabledIcon = 
                     TunerService.parseIntegerSwitch(newValue, true);
                 updateTelephony();
+                break;
+            case SHOW_FOURG_ICON:
+                mConfig = Config.readConfig(mContext);
+                setConfiguration(mConfig);
+                notifyListeners();
                 break;
             default:
                 break;
