@@ -161,4 +161,7 @@
 
     <!-- Whether key handler sends intent when changing slider position -->
     <java-symbol type="string" name="config_alertSliderIntent" />
+    
+    <!-- Whether to use old mobile type icons as default -->
+    <java-symbol type="bool" name="config_useOldMobileIcons" />
 </resources>
