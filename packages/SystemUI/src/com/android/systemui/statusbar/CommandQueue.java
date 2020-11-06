@@ -170,6 +170,7 @@ public class CommandQueue extends IStatusBar.Stub implements
     private static final int MSG_ENTER_STAGE_SPLIT_FROM_RUNNING_APP = 71 << MSG_SHIFT;
     private static final int MSG_SCREEN_PINNING_STATE_CHANGED      = 72 << MSG_SHIFT;
     private static final int MSG_LEFT_IN_LANDSCAPE_STATE_CHANGED   = 73 << MSG_SHIFT;
+    private static final int MSG_TOGGLE_CAMERA_FLASH = 74 << MSG_SHIFT;
 
     public static final int FLAG_EXCLUDE_NONE = 0;
     public static final int FLAG_EXCLUDE_SEARCH_PANEL = 1 << 0;
@@ -498,6 +499,8 @@ public class CommandQueue extends IStatusBar.Stub implements
         default void screenPinningStateChanged(boolean enabled) {}
 
         default void leftInLandscapeChanged(boolean isLeft) {}
+
+        default void toggleCameraFlash() { }
     }
 
     public CommandQueue(Context context) {
@@ -1351,6 +1354,14 @@ public class CommandQueue extends IStatusBar.Stub implements
         }
     }
 
+    @Override
+    public void toggleCameraFlash() {
+        synchronized (mLock) {
+            mHandler.removeMessages(MSG_TOGGLE_CAMERA_FLASH);
+            mHandler.sendEmptyMessage(MSG_TOGGLE_CAMERA_FLASH);
+        }
+    }
+
     private final class H extends Handler {
         private H(Looper l) {
             super(l);
@@ -1810,6 +1821,11 @@ public class CommandQueue extends IStatusBar.Stub implements
                 case MSG_LEFT_IN_LANDSCAPE_STATE_CHANGED:
                     for (int i = 0; i < mCallbacks.size(); i++) {
                         mCallbacks.get(i).leftInLandscapeChanged(msg.arg1 != 0);
+                    }
+                    break;
+                case MSG_TOGGLE_CAMERA_FLASH:
+                    for (int i = 0; i < mCallbacks.size(); i++) {
+                        mCallbacks.get(i).toggleCameraFlash();
                     }
                     break;
             }
