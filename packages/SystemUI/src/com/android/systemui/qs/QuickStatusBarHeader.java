@@ -24,7 +24,11 @@ import android.content.res.Resources;
 import android.graphics.Color;
 import android.graphics.Rect;
 import android.os.UserHandle;
+import android.net.Uri;
+import android.os.VibrationEffect;
+import android.os.Vibrator;
 import android.provider.AlarmClock;
+import android.provider.CalendarContract;
 import android.util.AttributeSet;
 import android.util.Pair;
 import android.view.DisplayCutout;
@@ -63,7 +67,8 @@ import java.util.List;
  * View that contains the top-most bits of the QS panel (primarily the status bar with date, time,
  * battery, carrier info and privacy icons) and also contains the {@link QuickQSPanel}.
  */
-public class QuickStatusBarHeader extends FrameLayout implements TunerService.Tunable {
+public class QuickStatusBarHeader extends FrameLayout implements TunerService.Tunable,
+        View.OnClickListener, View.OnLongClickListener {    
 
     private static final String QS_WEATHER_POSITION =
             "system:" + Settings.System.QS_WEATHER_POSITION;
@@ -137,12 +142,16 @@ public class QuickStatusBarHeader extends FrameLayout implements TunerService.Tu
     private boolean mHasLeftCutout;
     private boolean mHasRightCutout;
 
-
     private boolean mUseCombinedQSHeader;
+
+    private int mStatusBarBatteryStyle, mQSBatteryStyle, mQSBatteryLocation;
+    private final ActivityStarter mActivityStarter;
+    private final Vibrator mVibrator;
 
     public QuickStatusBarHeader(Context context, AttributeSet attrs) {
         super(context, attrs);
         mActivityStarter = Dependency.get(ActivityStarter.class);
+        mVibrator = (Vibrator) context.getSystemService(Context.VIBRATOR_SERVICE);
     }
 
     /**
@@ -166,7 +175,9 @@ public class QuickStatusBarHeader extends FrameLayout implements TunerService.Tu
         mIconContainer = findViewById(R.id.statusIcons);
         mPrivacyChip = findViewById(R.id.privacy_chip);
         mDateView = findViewById(R.id.date);
+        mDateView.setOnClickListener(this);
         mClockDateView = findViewById(R.id.date_clock);
+        mClockDateView.setOnClickListener(this);
         mQsWeatherView = findViewById(R.id.qs_weather_view);
         mQsWeatherHeaderView = findViewById(R.id.weather_view_header);
         mClockIconsSeparator = findViewById(R.id.separator);
@@ -176,9 +187,9 @@ public class QuickStatusBarHeader extends FrameLayout implements TunerService.Tu
 
         mClockContainer = findViewById(R.id.clock_container);
         mClockView = findViewById(R.id.clock);
-        mClockView.setOnClickListener(
-                v -> mActivityStarter.postStartActivityDismissingKeyguard(
-                        new Intent(AlarmClock.ACTION_SHOW_ALARMS), 0));
+        mClockView.setQsHeader();
+        mClockView.setOnClickListener(this);
+        mClockView.setOnLongClickListener(this);
         mDatePrivacySeparator = findViewById(R.id.space);
         // Tint for the battery icons are handled in setupHost()
         mBatteryRemainingIcon = findViewById(R.id.batteryRemainingIcon);
@@ -252,6 +263,36 @@ public class QuickStatusBarHeader extends FrameLayout implements TunerService.Tu
     public void onRtlPropertiesChanged(int layoutDirection) {
         super.onRtlPropertiesChanged(layoutDirection);
         updateResources();
+    }
+
+    @Override
+    public void onClick(View v) {
+        // Clock view is still there when the panel is not expanded
+        // Making sure we get the date action when the user clicks on it
+        // but actually is seeing the date
+        if (v == mClockView) {
+            mActivityStarter.postStartActivityDismissingKeyguard(new Intent(
+                    AlarmClock.ACTION_SHOW_ALARMS), 0);
+        } else if (v == mDateView || v == mClockDateView) {
+            Uri.Builder builder = CalendarContract.CONTENT_URI.buildUpon();
+            builder.appendPath("time");
+            builder.appendPath(Long.toString(System.currentTimeMillis()));
+            Intent todayIntent = new Intent(Intent.ACTION_VIEW, builder.build());
+            mActivityStarter.postStartActivityDismissingKeyguard(todayIntent, 0);
+        }
+    }
+
+    @Override
+    public boolean onLongClick(View v) {
+        if (v == mClockView || v == mDateView || v == mClockDateView) {
+            Intent nIntent = new Intent(Intent.ACTION_MAIN);
+            nIntent.setClassName("com.android.settings",
+                    "com.android.settings.Settings$DateTimeSettingsActivity");
+            mActivityStarter.startActivity(nIntent, true /* dismissShade */);
+            mVibrator.vibrate(VibrationEffect.createOneShot(50, VibrationEffect.DEFAULT_AMPLITUDE));
+            return true;
+        }
+        return false;
     }
 
     private void setDatePrivacyContainersWidth(boolean landscape) {
