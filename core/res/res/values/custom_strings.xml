@@ -28,7 +28,4 @@
 
     <!-- Face unlock -->
     <string name="face_unlock_disabled_idle">Face unlock disabled due to inactivity</string>
-
-    <!-- Face Unlock -->
-    <string name="face_unlock_recognizing">Recognizing face...</string>
 </resources>
