@@ -49,4 +49,8 @@
     
     <!-- Face unlock -->
     <java-symbol type="string" name="face_unlock_disabled_idle" />
+
+    <!-- App lock -->
+    <java-symbol type="string" name="unlock_application" />
+    <java-symbol type="array" name="config_appLockAllowedSystemApps" />
 </resources>
