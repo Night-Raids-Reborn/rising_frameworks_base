@@ -25,10 +25,12 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.icu.util.Calendar;
 import android.location.Location;
+import android.location.LocationRequest;
 import android.location.LocationListener;
 import android.location.LocationManager;
 import android.os.Bundle;
 import android.os.Handler;
+import android.os.HandlerExecutor;
 import android.os.Looper;
 import android.os.Message;
 import android.util.ArrayMap;
@@ -155,10 +157,11 @@ public final class TwilightService extends SystemService
 
     private void startListening() {
         Slog.d(TAG, "startListening");
-
-        // Start listening for location updates (default: low power, max 1h, min 10m).
-        mLocationManager.requestLocationUpdates(
-                null /* default */, this, Looper.getMainLooper());
+        // Start listening for location updates
+        final LocationRequest locationRequest = createLocationRequest();
+        final Handler handler = new Handler(Looper.getMainLooper());
+        mLocationManager.requestLocationUpdates(LocationManager.FUSED_PROVIDER, locationRequest,
+                new HandlerExecutor(handler), this);
 
         // Request the device's location immediately if a previous location isn't available.
         if (mLocationManager.getLastLocation() == null) {
@@ -237,6 +240,13 @@ public final class TwilightService extends SystemService
                     ? state.sunriseTimeMillis() : state.sunsetTimeMillis();
             mAlarmManager.setExact(AlarmManager.RTC, triggerAtMillis, TAG, this, mHandler);
         }
+    }
+
+    protected LocationRequest createLocationRequest() {
+        // default: low power, max 1h, min 10m
+        return new LocationRequest.Builder(60 * 60 * 1000)
+                .setQuality(LocationRequest.QUALITY_LOW_POWER)
+                .build();
     }
 
     @Override

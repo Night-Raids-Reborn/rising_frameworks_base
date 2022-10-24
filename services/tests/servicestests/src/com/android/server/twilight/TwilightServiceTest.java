@@ -19,6 +19,7 @@ package com.android.server.twilight;
 import android.app.AlarmManager;
 import android.content.Context;
 import android.location.Location;
+import android.location.LocationRequest;
 import android.test.AndroidTestCase;
 
 public class TwilightServiceTest extends AndroidTestCase {
@@ -57,6 +58,11 @@ public class TwilightServiceTest extends AndroidTestCase {
         mTwilightService.onLocationChanged(invalidLocation);
         assertEquals(mTwilightService.mLastLocation, mInitialLocation);
         assertEquals(priorState, mTwilightService.mLastTwilightState);
+    }
+
+    public void testCreateLocationRequest_useLowQuality() {
+        LocationRequest locationRequest = mTwilightService.createLocationRequest();
+        assertEquals(locationRequest.getQuality(), LocationRequest.QUALITY_LOW_POWER);
     }
 
     private Location createMockLocation(double latitude, double longitude) {
