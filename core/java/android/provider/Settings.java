@@ -5662,6 +5662,12 @@ public final class Settings {
         public static final String QS_PANEL_STYLE = "qs_panel_style";
 
         /**
+         * Volume styles
+         * @hide
+         */
+        public static final String CUSTOM_VOLUME_STYLES = "custom_volume_styles";
+
+        /**
          * Lockscreen clock format
          * @hide
          */
