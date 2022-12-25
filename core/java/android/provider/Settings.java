@@ -5619,6 +5619,11 @@ public final class Settings {
          */
         public static final String RETICKER_STATUS = "reticker_status";
 
+	/**
+         * @hide
+         */
+        public static final String VOLUME_MEDIA_OUTPUT_TOGGLE = "volume_media_output_toggle";
+
         /**
          * reTicker Colored
          * @hide
