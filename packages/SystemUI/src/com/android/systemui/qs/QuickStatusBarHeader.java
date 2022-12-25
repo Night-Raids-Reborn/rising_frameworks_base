@@ -55,6 +55,7 @@ import com.android.systemui.util.LargeScreenUtils;
 import com.android.systemui.tuner.TunerService;
 
 import lineageos.providers.LineageSettings;
+import android.provider.Settings;
 
 import java.util.List;
 
@@ -63,6 +64,9 @@ import java.util.List;
  * battery, carrier info and privacy icons) and also contains the {@link QuickQSPanel}.
  */
 public class QuickStatusBarHeader extends FrameLayout implements TunerService.Tunable {
+
+    private static final String QS_WEATHER_POSITION =
+            "system:" + Settings.System.QS_WEATHER_POSITION;
 
     private boolean mExpanded;
     private boolean mQsDisabled;
@@ -85,6 +89,9 @@ public class QuickStatusBarHeader extends FrameLayout implements TunerService.Tu
     private View mStatusIconsView;
     private View mContainer;
 
+    private View mQsWeatherView;
+    private View mQsWeatherHeaderView; 
+
     private View mQSCarriers;
     private ViewGroup mClockContainer;
     private Clock mClockView;
@@ -98,6 +105,8 @@ public class QuickStatusBarHeader extends FrameLayout implements TunerService.Tu
     private BatteryMeterView mBatteryRemainingIcon;
     private StatusIconContainer mIconContainer;
     private View mPrivacyChip;
+    
+    private int mQQSWeather;
 
     @Nullable
     private TintedIconManager mTintedIconManager;
@@ -158,6 +167,8 @@ public class QuickStatusBarHeader extends FrameLayout implements TunerService.Tu
         mPrivacyChip = findViewById(R.id.privacy_chip);
         mDateView = findViewById(R.id.date);
         mClockDateView = findViewById(R.id.date_clock);
+        mQsWeatherView = findViewById(R.id.qs_weather_view);
+        mQsWeatherHeaderView = findViewById(R.id.weather_view_header);
         mClockIconsSeparator = findViewById(R.id.separator);
         mRightLayout = findViewById(R.id.rightLayout);
         mDateContainer = findViewById(R.id.date_container);
@@ -186,7 +197,8 @@ public class QuickStatusBarHeader extends FrameLayout implements TunerService.Tu
                 .build();
 
         Dependency.get(TunerService.class).addTunable(this,
-                StatusBarIconController.ICON_HIDE_LIST);
+                StatusBarIconController.ICON_HIDE_LIST,
+                QS_WEATHER_POSITION);
     }
 
     void onAttach(TintedIconManager iconManager,
@@ -390,6 +402,8 @@ public class QuickStatusBarHeader extends FrameLayout implements TunerService.Tu
                 // These views appear on expanding down
                 .addFloat(mDateView, "alpha", 0, 0, 1)
                 .addFloat(mClockDateView, "alpha", 1, 0, 0)
+                .addFloat(mQsWeatherHeaderView, "alpha", 0, 0, 1)
+                .addFloat(mQsWeatherView, "alpha", 1, 0, 0)
                 .addFloat(mQSCarriers, "alpha", 0, 1)
                 // Use statusbar paddings when collapsed,
                 // align with QS when expanded, and animate translation
@@ -634,10 +648,32 @@ public class QuickStatusBarHeader extends FrameLayout implements TunerService.Tu
         mDatePrivacyView.setScrollY(scrollY);
     }
 
+    private void updateQSWeatherPosition() {
+        if (mQQSWeather == 0) {
+            mQsWeatherHeaderView.setVisibility(View.GONE);
+            mQsWeatherView.setVisibility(View.VISIBLE);
+        } else if (mQQSWeather == 1) {
+            mQsWeatherHeaderView.setVisibility(View.VISIBLE);
+            mQsWeatherView.setVisibility(View.GONE);
+        } else {
+            mQsWeatherHeaderView.setVisibility(View.VISIBLE);
+            mQsWeatherView.setVisibility(View.VISIBLE);
+        }
+    }
+    
     @Override
     public void onTuningChanged(String key, String newValue) {
         mClockView.setClockVisibleByUser(!StatusBarIconController.getIconHideList(
                 mContext, newValue).contains("clock"));
+        switch (key) {
+            case QS_WEATHER_POSITION:
+                mQQSWeather =
+                       TunerService.parseInteger(newValue, 2);
+                updateQSWeatherPosition();
+                break;
+            default:
+                break;
+        }
     }
 
     private void setBatteryRemainingOnClick(boolean enable) {
