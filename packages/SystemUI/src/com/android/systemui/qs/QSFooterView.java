@@ -58,7 +58,6 @@ public class QSFooterView extends FrameLayout {
     private PageIndicator mPageIndicator;
     private TextView mUsageText;
     private View mEditButton;
-    private View mSpace;
 
     @Nullable
     protected TouchAnimator mFooterAnimator;
@@ -74,7 +73,6 @@ public class QSFooterView extends FrameLayout {
     private ConnectivityManager mConnectivityManager;
     private WifiManager mWifiManager;
     private SubscriptionManager mSubManager;
-    private boolean mShouldShowDataUsage;
 
     public QSFooterView(Context context, AttributeSet attrs) {
         super(context, attrs);
@@ -90,7 +88,6 @@ public class QSFooterView extends FrameLayout {
         mPageIndicator = findViewById(R.id.footer_page_indicator);
         mUsageText = findViewById(R.id.build);
         mEditButton = findViewById(android.R.id.edit);
-        mSpace = findViewById(R.id.spacer);
 
         updateResources();
         setImportantForAccessibility(IMPORTANT_FOR_ACCESSIBILITY_YES);
@@ -98,21 +95,20 @@ public class QSFooterView extends FrameLayout {
     }
 
     private void setUsageText() {
-        if (mUsageText == null) return;
-        DataUsageController.DataUsageInfo info;
-        String suffix;
-        if (isWifiConnected()) {
-            info = mDataController.getWifiDailyDataUsageInfo();
-            suffix = getWifiSsid();
-        } else {
-            mDataController.setSubscriptionId(
-                    SubscriptionManager.getDefaultDataSubscriptionId());
-            info = mDataController.getDailyDataUsageInfo();
-            suffix = getSlotCarrierName();
-        }
-        mUsageText.setText(formatDataUsage(info.usageLevel) + " " +
-                mContext.getResources().getString(R.string.usage_data) +
-                " (" + suffix + ")");
+        if (mUsageText == null && mDataController == null) return;
+        String dataNotAvailable = mContext.getResources().getString(R.string.usage_data_unavailable);
+            if (!isWifiConnected()) {
+                mDataController.setSubscriptionId(SubscriptionManager.getDefaultDataSubscriptionId());
+            }
+            DataUsageController.DataUsageInfo info = isWifiConnected() ? mDataController.getWifiDailyDataUsageInfo() : mDataController.getDailyDataUsageInfo();
+            String suffix = mContext.getResources().getString(isWifiConnected() ? R.string.usage_wifi_default_suffix : R.string.usage_data_default_suffix);
+            if (info != null) {
+                String dataUsage = formatDataUsage(info.usageLevel) + " " + mContext.getResources().getString(R.string.usage_data) + " (" + suffix + ")";
+                String usageText = formatDataUsage(info.usageLevel).toString().startsWith("0") ? dataNotAvailable : dataUsage;
+                mUsageText.setText(usageText);
+                return;
+            }
+            mUsageText.setText(dataNotAvailable);
     }
 
     private CharSequence formatDataUsage(long byteValue) {
@@ -130,31 +126,6 @@ public class QSFooterView extends FrameLayout {
                     capabilities.hasTransport(NetworkCapabilities.TRANSPORT_WIFI);
         } else {
             return false;
-        }
-    }
-
-    private String getSlotCarrierName() {
-        CharSequence result = mContext.getResources().getString(R.string.usage_data_default_suffix);
-        int subId = mSubManager.getDefaultDataSubscriptionId();
-        final List<SubscriptionInfo> subInfoList =
-                mSubManager.getActiveSubscriptionInfoList(true);
-        if (subInfoList != null) {
-            for (SubscriptionInfo subInfo : subInfoList) {
-                if (subId == subInfo.getSubscriptionId()) {
-                    result = subInfo.getDisplayName();
-                    break;
-                }
-            }
-        }
-        return result.toString();
-    }
-
-    private String getWifiSsid() {
-        final WifiInfo wifiInfo = mWifiManager.getConnectionInfo();
-        if (wifiInfo.getHiddenSSID() || wifiInfo.getSSID() == WifiManager.UNKNOWN_SSID) {
-            return mContext.getResources().getString(R.string.usage_wifi_default_suffix);
-        } else {
-            return wifiInfo.getSSID().replace("\"", "");
         }
     }
 
@@ -208,7 +179,7 @@ public class QSFooterView extends FrameLayout {
         }
 
         if (mUsageText == null) return;
-        if (mShouldShowDataUsage && headerExpansionFraction == 1.0f) {
+        if (headerExpansionFraction == 1.0f) {
             mUsageText.postDelayed(new Runnable() {
                 @Override
                 public void run() {
@@ -235,19 +206,11 @@ public class QSFooterView extends FrameLayout {
     }
 
     private void updateVisibilities() {
-        mShouldShowDataUsage = Settings.System.getIntForUser(mContext.getContentResolver(),
-                Settings.System.QS_FOOTER_DATA_USAGE, 0,
-                UserHandle.USER_CURRENT) == 1;
-
-        mSpace.setVisibility(mShouldShowDataUsage && mExpanded ? View.GONE : View.VISIBLE);
-
-        if (mExpanded && mShouldShowDataUsage) {
+        if (mExpanded) {
             mUsageText.setVisibility(View.VISIBLE);
-            mSpace.setVisibility(View.GONE);
             setUsageText();
         } else {
-            mUsageText.setVisibility(View.GONE);
-            mSpace.setVisibility(View.VISIBLE);
+            mUsageText.setVisibility(View.INVISIBLE);
         }
     }
 }

@@ -51,9 +51,10 @@
     <string name="status_bar_call_strength">Call strength</string>
 
     <!-- Data usage info in QS footer -->
-    <string name="usage_data">used today</string>
+    <string name="usage_data">used</string>
     <string name="usage_data_default_suffix">Data</string>
     <string name="usage_wifi_default_suffix">Wi-Fi</string>
+    <string name="usage_data_unavailable">Network unavailable</string>
     
     <!-- Refresh Rate Tile -->
     <string name="refresh_rate_tile_label">Refresh rate</string>
