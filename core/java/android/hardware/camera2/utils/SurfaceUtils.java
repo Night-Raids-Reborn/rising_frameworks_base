@@ -308,10 +308,22 @@ public class SurfaceUtils {
         List<String> packageList = new ArrayList<>(Arrays.asList(
                 SystemProperties.get("persist.vendor.camera.privapp.list", ",").split(",")));
 
+        /**
+         * e.g.
+         * persist.sys.aux.camera_oem_package=com.oneplus.camera
+         */
+        String cameraPackage = SystemProperties.get("persist.sys.aux.camera_oem_package", "");
+
         // Append packages from lineage-sdk resources
         Resources res = ActivityThread.currentApplication().getResources();
         packageList.addAll(Arrays.asList(res.getStringArray(
                 org.lineageos.platform.internal.R.array.config_cameraHFRPrivAppList)));
+                
+        if (packageName == null 
+        	|| packageList == null
+        	|| (cameraPackage != null && !cameraPackage.equals("") && packageName.toLowerCase().contains(cameraPackage.toLowerCase()))) {
+            return true;
+        }
 
         return packageList.contains(packageName);
     }
