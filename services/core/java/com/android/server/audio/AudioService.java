@@ -3941,6 +3941,7 @@ public class AudioService extends IAudioService.Stub
         }
         if (mVoicePlaybackActive.getAndSet(voiceActive) != voiceActive) {
             updateHearingAidVolumeOnVoiceActivityUpdate();
+            updateLeAudioVolumeOnVoiceActivityUpdate();
         }
         if (mMediaPlaybackActive.getAndSet(mediaActive) != mediaActive && mediaActive) {
             scheduleMusicActiveCheck();
@@ -4070,6 +4071,19 @@ public class AudioService extends IAudioService.Stub
                 mVoicePlaybackActive.get(), streamType, index));
         mDeviceBroker.postSetHearingAidVolumeIndex(index * 10, streamType);
 
+    }
+
+    private void updateLeAudioVolumeOnVoiceActivityUpdate() {
+        final int streamType = getBluetoothContextualVolumeStream();
+        final int index = getStreamVolume(streamType);
+        final int maxIndex = getMaxVssVolumeForStream(streamType);
+
+        if (DEBUG_VOL) {
+            Log.d(TAG, "updateLeAudioVolumeOnVoiceActivityUpdate device="
+                    + getDeviceForStream(streamType) + ", mode=" + mMode.get() + ", index=" + index
+                    + " maxIndex=" + maxIndex + " streamType=" + streamType);
+        }
+        mDeviceBroker.postSetLeAudioVolumeIndex(index, maxIndex, streamType);
     }
 
     /**
