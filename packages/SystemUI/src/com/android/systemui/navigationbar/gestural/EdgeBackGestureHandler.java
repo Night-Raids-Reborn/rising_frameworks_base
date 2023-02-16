@@ -348,6 +348,8 @@ public class EdgeBackGestureHandler implements PluginListener<NavigationEdgeBack
                 }
             };
 
+    private boolean mEdgeHapticEnabled;
+
     EdgeBackGestureHandler(
             Context context,
             OverviewProxyService overviewProxyService,
@@ -433,6 +435,7 @@ public class EdgeBackGestureHandler implements PluginListener<NavigationEdgeBack
         mEdgeWidthRight = mGestureNavigationSettingsObserver.getRightSensitivity(res);
         mIsBackGestureAllowed =
                 !mGestureNavigationSettingsObserver.areNavigationButtonForcedVisible();
+        mEdgeHapticEnabled = mGestureNavigationSettingsObserver.getEdgeHaptic();
 
         final DisplayMetrics dm = res.getDisplayMetrics();
         final float defaultGestureHeight = res.getDimension(
@@ -894,6 +897,7 @@ public class EdgeBackGestureHandler implements PluginListener<NavigationEdgeBack
                     && isWithinTouchRegion((int) ev.getX(), (int) ev.getY());
             if (mAllowGesture) {
                 mEdgeBackPlugin.setIsLeftPanel(mIsOnLeftEdge);
+                mEdgeBackPlugin.setEdgeHapticEnabled(mEdgeHapticEnabled);
                 mEdgeBackPlugin.onMotionEvent(ev);
                 dispatchToBackAnimation(ev);
             }
