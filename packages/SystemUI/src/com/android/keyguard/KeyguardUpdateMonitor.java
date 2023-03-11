@@ -2683,7 +2683,7 @@ public class KeyguardUpdateMonitor implements TrustManager.TrustListener, Dumpab
         // Don't trigger active unlock if primary auth is required
         final boolean primaryAuthRequired = !isUnlockingWithBiometricAllowed(true);
 
-        boolean shouldTriggerActiveUnlock =
+        final boolean shouldTriggerActiveUnlock =
                 (mAuthInterruptActive || triggerActiveUnlockForAssistant || awakeKeyguard)
                         && !mSwitchingUser
                         && !userCanDismissLockScreen
@@ -2691,10 +2691,6 @@ public class KeyguardUpdateMonitor implements TrustManager.TrustListener, Dumpab
                         && !primaryAuthRequired
                         && !mKeyguardGoingAway
                         && !mSecureCameraLaunched;
-
-        if (shouldTriggerActiveUnlock && mFaceUnlockBehavior == FACE_UNLOCK_BEHAVIOR_SWIPE && !mPrimaryBouncerFullyShown) {
-            shouldTriggerActiveUnlock = false;
-        }
 
         // Aggregate relevant fields for debug logging.
         logListenerModelData(
@@ -2848,7 +2844,7 @@ public class KeyguardUpdateMonitor implements TrustManager.TrustListener, Dumpab
 
         // Only listen if this KeyguardUpdateMonitor belongs to the primary user. There is an
         // instance of KeyguardUpdateMonitor for each user but KeyguardUpdateMonitor is user-aware.
-        final boolean shouldListen =
+        boolean shouldListen =
                 (mPrimaryBouncerFullyShown
                         || mAuthInterruptActive
                         || mOccludingAppRequestingFace
@@ -2862,6 +2858,10 @@ public class KeyguardUpdateMonitor implements TrustManager.TrustListener, Dumpab
                 && (!mSecureCameraLaunched || mOccludingAppRequestingFace)
                 && faceAndFpNotAuthenticated
                 && !mGoingToSleep;
+
+        if (shouldListen && mFaceUnlockBehavior == FACE_UNLOCK_BEHAVIOR_SWIPE && !mPrimaryBouncerFullyShown){
+            shouldListen = false;
+        }
 
         // Aggregate relevant fields for debug logging.
         logListenerModelData(
