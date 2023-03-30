@@ -1,7 +1,7 @@
 <resources>
     <color name="accent_device_default_light">@*android:color/accent_device_default_light</color>
 
-    <color name="reticker_background_color">@android:color/system_neutral1_50</color>
+    <color name="reticker_background_color">@android:color/system_neutral1_0</color>
     
     <!-- Keyguard buttons (udfps, affordance etc.) -->
     <color name="keyguard_button_fg_color">@android:color/white</color>
