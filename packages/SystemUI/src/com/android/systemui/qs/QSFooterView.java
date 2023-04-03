@@ -91,12 +91,18 @@ public class QSFooterView extends FrameLayout {
 
         updateResources();
         setImportantForAccessibility(IMPORTANT_FOR_ACCESSIBILITY_YES);
-        setUsageText();
+        setUsageText(false);
     }
 
-    private void setUsageText() {
-        if (mUsageText == null && mDataController == null) return;
-        String dataNotAvailable = mContext.getResources().getString(R.string.usage_data_unavailable);
+    private void setUsageText(boolean expanded) {
+    	if (mUsageText == null) return;
+    	mUsageText.setVisibility(expanded ? View.VISIBLE : View.GONE);
+        if (!expanded) return;
+            String dataNotAvailable = mContext.getResources().getString(R.string.usage_data_unavailable);
+            if (mDataController == null) {
+                mUsageText.setText(dataNotAvailable);
+                return;
+            }
             if (!isWifiConnected()) {
                 mDataController.setSubscriptionId(SubscriptionManager.getDefaultDataSubscriptionId());
             }
@@ -106,9 +112,9 @@ public class QSFooterView extends FrameLayout {
                 String dataUsage = formatDataUsage(info.usageLevel) + " " + mContext.getResources().getString(R.string.usage_data) + " (" + suffix + ")";
                 String usageText = formatDataUsage(info.usageLevel).toString().startsWith("0") ? dataNotAvailable : dataUsage;
                 mUsageText.setText(usageText);
-                return;
+            } else {
+                mUsageText.setText(dataNotAvailable);
             }
-            mUsageText.setText(dataNotAvailable);
     }
 
     private CharSequence formatDataUsage(long byteValue) {
@@ -200,17 +206,8 @@ public class QSFooterView extends FrameLayout {
 
     void updateEverything() {
         post(() -> {
-            updateVisibilities();
+            setUsageText(mExpanded);
             setClickable(false);
         });
-    }
-
-    private void updateVisibilities() {
-        if (mExpanded) {
-            mUsageText.setVisibility(View.VISIBLE);
-            setUsageText();
-        } else {
-            mUsageText.setVisibility(View.INVISIBLE);
-        }
     }
 }
