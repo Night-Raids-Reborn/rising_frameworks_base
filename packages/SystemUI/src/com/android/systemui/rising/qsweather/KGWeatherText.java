@@ -1,5 +1,6 @@
 /*
  *  Copyright (C) 2021 CorvusOS
+ *  Copyright (C) 2023 The RisingOS Android Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,7 +15,7 @@
  * limitations under the License.
  */
 
-package com.android.systemui.corvus.qsweather;
+package com.android.systemui.rising.qsweather;
 
 import android.content.ContentResolver;
 import android.content.Context;
@@ -28,6 +29,7 @@ import android.provider.Settings;
 import android.text.TextUtils;
 import android.util.AttributeSet;
 import android.util.Log;
+import android.util.TypedValue;
 import android.view.View;
 import android.widget.TextView;
 
@@ -82,7 +84,6 @@ public class KGWeatherText extends TextView implements
 
     public KGWeatherText(Context context, AttributeSet attrs, int defStyle) {
         super(context, attrs, defStyle);
-        final Resources resources = getResources();
         mContext = context;
         mHandler = new Handler();
         mWeatherClient = new OmniJawsClient(mContext);
@@ -120,7 +121,7 @@ public class KGWeatherText extends TextView implements
     public void updateSettings(boolean onChange) {
         ContentResolver resolver = mContext.getContentResolver();
         mQsWeatherEnabled = Settings.System.getIntForUser(
-                resolver, Settings.System.KG_SHOW_WEATHER_TEMP, 0,
+                resolver, Settings.System.KG_SHOW_WEATHER_TEMP, 6,
                 UserHandle.USER_CURRENT);
         if ((mQsWeatherEnabled != 0 && mQsWeatherEnabled != 5)) {
             mWeatherClient.setOmniJawsEnabled(true);
@@ -157,7 +158,7 @@ public class KGWeatherText extends TextView implements
                               formattedCondition = "Cloudy";
                             } else if (formattedCondition.toLowerCase().contains("rain")) {
                               formattedCondition = "Rainy";
-                            } else if (formattedCondition.toLowerCase().contains("clear")) {
+                            } else if (formattedCondition.toLowerCase().contains("sun")) {
                               formattedCondition = "Sunny";
                             } else if (formattedCondition.toLowerCase().contains("storm")) {
                               formattedCondition = "Stormy";
@@ -168,13 +169,13 @@ public class KGWeatherText extends TextView implements
                             } else if (formattedCondition.toLowerCase().contains("mist")) {
                               formattedCondition = "Misty";
                             }
-                            setText(mWeatherData.temp + mWeatherData.tempUnits + " ~ "  + formattedCondition);
+                            setText(mWeatherData.temp + mWeatherData.tempUnits + " - "  + formattedCondition);
                         } else {
                             setText(mWeatherData.temp + mWeatherData.tempUnits);
                         }
                         if (mQsWeatherEnabled != 0 && mQsWeatherEnabled != 5) {
                             setVisibility(View.VISIBLE);
-                            setTextSize(16.0f);
+                            setTextSize(TypedValue.COMPLEX_UNIT_PX, getResources().getDimensionPixelSize(R.dimen.widget_weather_font_size));
                         }
                     }
                 } else {

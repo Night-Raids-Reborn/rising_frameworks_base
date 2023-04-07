@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package com.android.systemui.corvus.qsweather;
+package com.android.systemui.rising.qsweather;
 
 import android.content.ContentResolver;
 import android.content.Context;
@@ -65,7 +65,6 @@ public class KGWeatherImage extends ImageView implements
 
     public KGWeatherImage(Context context, AttributeSet attrs, int defStyle) {
         super(context, attrs, defStyle);
-        final Resources resources = getResources();
         mContext = context;
         mHandler = new Handler();
         mWeatherClient = new OmniJawsClient(mContext);

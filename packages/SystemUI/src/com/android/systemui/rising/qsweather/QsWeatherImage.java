@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package com.android.systemui.corvus.qsweather;
+package com.android.systemui.rising.qsweather;
 
 import android.content.ContentResolver;
 import android.content.Context;

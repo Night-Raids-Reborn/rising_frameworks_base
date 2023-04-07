@@ -67,14 +67,15 @@
             android:layout_marginStart="2dp"
             android:gravity="start|center_vertical">
 
-            <com.android.systemui.corvus.qsweather.QsWeatherImage
+            <com.android.systemui.rising.qsweather.QsWeatherImage
                 android:id="@+id/weather_image"
-                android:layout_width="24dp"
-                android:layout_height="wrap_content"
+                android:layout_width="18dp"
+                android:layout_height="18dp"
                 android:paddingStart="2dp"
+                android:scaleType="fitXY"
                 android:gravity="center_vertical|start" />
 
-            <com.android.systemui.corvus.qsweather.QsWeatherText
+            <com.android.systemui.rising.qsweather.QsWeatherText
                 android:id="@+id/weather_temp"
                 android:layout_width="wrap_content"
                 android:layout_height="match_parent"

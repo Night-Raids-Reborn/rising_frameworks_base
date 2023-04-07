@@ -104,8 +104,6 @@ public class QuickStatusBarHeader extends FrameLayout implements TunerService.Tu
     private View mContainer;
 
     private View mQsWeatherView;
-    private View mQsWeatherHeaderView; 
-    private TextView mQSWeatherTemp;
 
     private View mQSCarriers;
     private ViewGroup mClockContainer;
@@ -204,9 +202,6 @@ public class QuickStatusBarHeader extends FrameLayout implements TunerService.Tu
         mClockDateView.setOnLongClickListener(this);
         mQsWeatherView = findViewById(R.id.qs_weather_view);
         mQsWeatherView.setOnLongClickListener(this);
-        mQsWeatherHeaderView = findViewById(R.id.weather_view_header);
-        mQsWeatherHeaderView.setOnLongClickListener(this);
-        mQSWeatherTemp = findViewById(R.id.weather_temp);
         mClockIconsSeparator = findViewById(R.id.separator);
         mRightLayout = findViewById(R.id.rightLayout);
         mDateContainer = findViewById(R.id.date_container);
@@ -335,7 +330,7 @@ public class QuickStatusBarHeader extends FrameLayout implements TunerService.Tu
             mActivityStarter.postStartActivityDismissingKeyguard(new Intent(
                     Intent.ACTION_POWER_USAGE_SUMMARY), 0);
             return true;
-        } else if (v == mQsWeatherHeaderView || v == mQsWeatherView) {
+        } else if (v == mQsWeatherView) {
             Intent wIntent = new Intent(Intent.ACTION_MAIN);
             wIntent.setClassName("org.omnirom.omnijaws",
                     "org.omnirom.omnijaws.SettingsActivity");
@@ -510,7 +505,6 @@ public class QuickStatusBarHeader extends FrameLayout implements TunerService.Tu
                 .addFloat(mDateView, "alpha", 0, 0, 1)
                 .addFloat(mQSCarriers, "alpha", 0, 0, 1)
                 .addFloat(mQsWeatherView, "alpha", 1, 0, 0)
-                .addFloat(mQsWeatherHeaderView, "alpha", 0, 0, 1)
                 // Date is shown next to clock only in QQS
                 .addFloat(mClockDateView, "alpha", 1, 0, 0, 0, 0)
                 // Move the clock container
@@ -533,9 +527,6 @@ public class QuickStatusBarHeader extends FrameLayout implements TunerService.Tu
                         mClockDateView.setVisibility(View.GONE);
                         mQSCarriers.setVisibility(View.VISIBLE);
                         updateRightLayout(true);
-                        if (mQSWeatherTemp != null) {
-                           mQSWeatherTemp.setSelected(true);
-                        }
                     }
 
                     @Override
@@ -560,9 +551,6 @@ public class QuickStatusBarHeader extends FrameLayout implements TunerService.Tu
                         setSeparatorVisibility(mShowClockIconsSeparator);
                         updateRightLayout(false);
                         mClockHeight = mClockView.getMeasuredHeight();
-                        if (mQsWeatherHeaderView != null) {
-                            mQsWeatherHeaderView.setVisibility(View.GONE);
-                        }
                         if (mQsWeatherView != null) {
                             mQsWeatherView.setVisibility(mQQSWeather != 1 ? View.VISIBLE : View.GONE);
                         }
@@ -593,15 +581,7 @@ public class QuickStatusBarHeader extends FrameLayout implements TunerService.Tu
             mIconsAlphaAnimator = mIconsAlphaAnimatorFixed;
             mIconsAlphaAnimator.setPosition(mKeyguardExpansionFraction);
             setBatteryRemainingOnClick(false);
-            if (mQQSWeather > 0 && mQsWeatherHeaderView != null) {
-                mQSWeatherTemp.setSelected(false);
-                mQsWeatherHeaderView.setVisibility(View.GONE);
-            }
         } else {
-            if (mQQSWeather > 0 && mQsWeatherHeaderView != null) {
-                mQsWeatherHeaderView.setVisibility(View.VISIBLE);
-                mQSWeatherTemp.setSelected(true);
-            }
             mIconsAlphaAnimator = null;
             mIconContainer.setAlpha(1);
             mBatteryRemainingIcon.setAlpha(1);

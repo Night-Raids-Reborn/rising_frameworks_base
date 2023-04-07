@@ -1,5 +1,6 @@
 /*
  *  Copyright (C) 2021 CorvusOS
+ *  Copyright (C) 2023 The RisingOS Android Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,7 +15,7 @@
  * limitations under the License.
  */
 
-package com.android.systemui.corvus.qsweather;
+package com.android.systemui.rising.qsweather;
 
 import android.content.ContentResolver;
 import android.content.Context;
@@ -27,9 +28,11 @@ import android.provider.Settings;
 import android.text.TextUtils;
 import android.util.AttributeSet;
 import android.util.Log;
+import android.util.TypedValue;
 import android.view.View;
 import android.widget.TextView;
 
+import com.android.settingslib.Utils;
 import com.android.systemui.R;
 import com.android.systemui.omni.OmniJawsClient;
 
@@ -153,10 +156,10 @@ public class QsWeatherText extends TextView implements
                         } else {
                             setText(mWeatherData.temp + mWeatherData.tempUnits);
                         }
-                        if (mQsWeatherEnabled != 0 && mQsWeatherEnabled != 5) {
-                            setVisibility(View.VISIBLE);
-                            setTextSize(14.0f);
-                        }
+                        int textColor = Utils.getColorAttrDefaultColor(mContext, android.R.attr.textColorPrimary);
+                        setVisibility(View.VISIBLE);
+                        setTextSize(TypedValue.COMPLEX_UNIT_PX, getResources().getDimensionPixelSize(R.dimen.qs_weather_text_size));
+                        setTextColor(textColor);
                     }
                 } else {
                     setVisibility(View.GONE);

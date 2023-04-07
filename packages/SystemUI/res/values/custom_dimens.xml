@@ -35,4 +35,7 @@
     
      <!-- QS Header height full -->
     <dimen name="qs_header_height_full">200dp</dimen>
+    
+     <!-- Weather dimens -->
+    <dimen name="qs_weather_text_size">14sp</dimen>
 </resources>
