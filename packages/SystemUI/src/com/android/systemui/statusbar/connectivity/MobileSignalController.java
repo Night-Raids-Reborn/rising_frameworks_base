@@ -25,6 +25,7 @@ import android.database.ContentObserver;
 import android.net.NetworkCapabilities;
 import android.os.Handler;
 import android.os.Looper;
+import android.os.SystemProperties;
 import android.provider.Settings.Global;
 import android.telephony.AccessNetworkConstants;
 import android.telephony.CellSignalStrength;
@@ -244,7 +245,7 @@ public class MobileSignalController extends SignalController<MobileState, Mobile
         };
         mImsMmTelManager = ImsMmTelManager.createForSubscriptionId(info.getSubscriptionId());
         mMobileStatusTracker = mobileStatusTrackerFactory.createTracker(mMobileCallback);
-        mProviderModelBehavior = featureFlags.isEnabled(Flags.COMBINED_STATUS_BAR_SIGNAL_ICONS);
+        mProviderModelBehavior = SystemProperties.getBoolean("persist.sys.flags.combined_signal_icons", true);
     }
 
     void setConfiguration(Config config) {
@@ -481,6 +482,7 @@ public class MobileSignalController extends SignalController<MobileState, Mobile
         CharSequence qsDescription = null;
 
         if (mCurrentState.dataSim) {
+
             if (mCurrentState.showQuickSettingsRatIcon() || mConfig.alwaysShowDataRatIcon) {
                 qsTypeIcon = dataTypeIcon;
             }
