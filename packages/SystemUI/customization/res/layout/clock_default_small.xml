@@ -24,7 +24,7 @@
     android:gravity="start"
     android:textSize="@dimen/small_clock_text_size"
     android:fontFamily="@*android:string/config_clockFontFamily"
-    android:textAlignment="center"
+    android:textAlignment="viewStart"
     android:includeFontPadding="false"
     android:elegantTextHeight="false"
     android:ellipsize="none"

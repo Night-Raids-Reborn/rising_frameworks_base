@@ -41,7 +41,7 @@
             android:paddingStart="@dimen/status_bar_left_clock_starting_padding"
             android:paddingEnd="@dimen/status_bar_left_clock_end_padding"
             android:singleLine="true"
-            android:textAlignment="center" 
+            android:textAlignment="viewStart" 
             android:includeFontPadding="false"
             android:textAppearance="@style/TextAppearance.QS.Status" />
 
@@ -52,7 +52,7 @@
             android:layout_marginStart="@dimen/status_bar_left_clock_end_padding"
             android:gravity="center_vertical|start"
             android:singleLine="true"
-            android:textAlignment="center"
+            android:textAlignment="viewStart"
             android:includeFontPadding="false"
             android:textAppearance="@style/TextAppearance.QS.Status"
             systemui:longDatePattern="@string/abbrev_wday_month_day_no_year_alarm"
@@ -95,7 +95,7 @@
         android:layout_marginTop="8dp"
         android:gravity="center_vertical"
         android:singleLine="true"
-        android:textAlignment="center"
+        android:textAlignment="viewStart"
         android:includeFontPadding="false"
         android:textAppearance="@style/TextAppearance.QS.Status"
         systemui:longDatePattern="@string/abbrev_wday_month_day_no_year_alarm"
