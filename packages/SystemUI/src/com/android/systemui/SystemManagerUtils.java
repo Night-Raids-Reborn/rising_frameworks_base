@@ -165,10 +165,6 @@ public class SystemManagerUtils {
     public static void onScreenWake() {
         h.removeCallbacks(mStopManagerInstance);
         idleModeHandler(false);
-        PowerManagerInternal mLocalPowerManager = LocalServices.getService(PowerManagerInternal.class);
-        if (mLocalPowerManager != null) {
-          mLocalPowerManager.setPowerBoost(Boost.DISPLAY_UPDATE_IMMINENT, 200);
-        }
     }
 
     public static long timeBeforeAlarm(Context context) {
