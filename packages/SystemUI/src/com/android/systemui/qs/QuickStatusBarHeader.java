@@ -484,7 +484,7 @@ public class QuickStatusBarHeader extends FrameLayout implements TunerService.Tu
                 // These views appear on expanding down
                 .addFloat(mDateView, "alpha", 0, 0, 1)
                 .addFloat(mQSCarriers, "alpha", 0, 0, 1)
-                .addFloat(mQsWeatherView, "alpha", 1, 0, 0)
+                .addFloat(mQsWeatherView, "alpha", 0, 0, 1)
                 // Date is shown next to clock only in QQS
                 .addFloat(mClockDateView, "alpha", 1, 0, 0, 0, 0)
                 // Move the clock container
@@ -516,7 +516,7 @@ public class QuickStatusBarHeader extends FrameLayout implements TunerService.Tu
                         mDateView.setVisibility(View.VISIBLE);
                         mQSCarriers.setVisibility(View.VISIBLE);
                         setChipVisibility(mPrivacyChip.getVisibility() == View.VISIBLE);
-                        mQsWeatherView.setVisibility(View.GONE);
+                        mQsWeatherView.setVisibility(mQQSWeather != 1 ? View.VISIBLE : View.GONE);
                         setSeparatorVisibility(false);
                     }
 
@@ -532,7 +532,7 @@ public class QuickStatusBarHeader extends FrameLayout implements TunerService.Tu
                         updateRightLayout(false);
                         mClockHeight = mClockView.getMeasuredHeight();
                         if (mQsWeatherView != null) {
-                            mQsWeatherView.setVisibility(mQQSWeather != 1 ? View.VISIBLE : View.GONE);
+                            mQsWeatherView.setVisibility(View.GONE);
                         }
                     }
                 });
