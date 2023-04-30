@@ -3647,7 +3647,6 @@ public class CentralSurfacesImpl implements CoreStartable, CentralSurfaces, Tune
                 SystemManagerUtils.cacheCleaner(CentralSurfaces.getPackageManagerForUser(mContext, mLockscreenUserManager.getCurrentUserId()));
                 int runtimePowerMode = Settings.System.getIntForUser(mContext.getContentResolver(),
                                             Settings.System.SYSTEM_MANAGER_RUNTIME_POWER_MODE, 0, mLockscreenUserManager.getCurrentUserId());
-                SystemManagerUtils.runtimePowerModeHandler(false, runtimePowerMode);
                 if (Settings.Secure.getIntForUser(mContext.getContentResolver(),
                                         Settings.Secure.SYSTEM_MANAGER_AGGRESSIVE_IDLE_MODE, 0, mLockscreenUserManager.getCurrentUserId()) == 1) {
                     Settings.Secure.putIntForUser(mContext.getContentResolver(),
@@ -3659,7 +3658,6 @@ public class CentralSurfacesImpl implements CoreStartable, CentralSurfaces, Tune
                 SystemManagerUtils.cacheCleaner(CentralSurfaces.getPackageManagerForUser(mContext, mLockscreenUserManager.getCurrentUserId()));
                 int runtimePowerMode = Settings.System.getIntForUser(mContext.getContentResolver(),
                                             Settings.System.SYSTEM_MANAGER_RUNTIME_POWER_MODE, 0, mLockscreenUserManager.getCurrentUserId());
-                SystemManagerUtils.runtimePowerModeHandler(false, runtimePowerMode);
                 if (Settings.Secure.getIntForUser(mContext.getContentResolver(),
                                         Settings.Secure.SYSTEM_MANAGER_AGGRESSIVE_IDLE_MODE, 0, mLockscreenUserManager.getCurrentUserId()) == 1) {
                     Settings.Secure.putIntForUser(mContext.getContentResolver(),
@@ -3700,7 +3698,6 @@ public class CentralSurfacesImpl implements CoreStartable, CentralSurfaces, Tune
             SystemManagerUtils.cancelIdleService();
     	    int runtimePowerMode = Settings.System.getIntForUser(mContext.getContentResolver(),
                                             Settings.System.SYSTEM_MANAGER_RUNTIME_POWER_MODE, 0, mLockscreenUserManager.getCurrentUserId());
-            SystemManagerUtils.runtimePowerModeHandler(true, runtimePowerMode);
             if (Settings.Secure.getIntForUser(mContext.getContentResolver(),
                                             Settings.Secure.SYSTEM_MANAGER_AGGRESSIVE_IDLE_MODE, 0, mLockscreenUserManager.getCurrentUserId()) == 1) {
                     Settings.Secure.putIntForUser(mContext.getContentResolver(),
