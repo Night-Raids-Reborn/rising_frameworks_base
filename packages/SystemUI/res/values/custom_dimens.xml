@@ -29,4 +29,7 @@
     <dimen name="dismiss_all_fab_src_size">24dp</dimen>
 
     <dimen name="status_bar_offset_max_y">4dp</dimen>
+    
+     <!-- Expanded QS clock/date paddings -->
+    <dimen name="qs_expanded_clock_date_padding_start">8dp</dimen>
 </resources>

@@ -39,9 +39,11 @@ import android.view.WindowInsets;
 import android.widget.FrameLayout;
 import android.widget.LinearLayout;
 import android.widget.Space;
+import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.constraintlayout.widget.ConstraintLayout;
 
 import com.android.internal.policy.SystemBarUtils;
 import com.android.settingslib.Utils;
@@ -73,6 +75,9 @@ public class QuickStatusBarHeader extends FrameLayout implements TunerService.Tu
     private static final String QS_WEATHER_POSITION =
             "system:" + Settings.System.QS_WEATHER_POSITION;
 
+    private static final float LARGE_CLOCK_SCALE_X = 2.3f;
+    private static final float LARGE_CLOCK_SCALE_Y = 2.4f;
+
     private boolean mExpanded;
     private boolean mQsDisabled;
 
@@ -94,6 +99,7 @@ public class QuickStatusBarHeader extends FrameLayout implements TunerService.Tu
 
     private View mQsWeatherView;
     private View mQsWeatherHeaderView; 
+    private TextView mQSWeatherTemp;
 
     private View mQSCarriers;
     private ViewGroup mClockContainer;
@@ -146,6 +152,11 @@ public class QuickStatusBarHeader extends FrameLayout implements TunerService.Tu
     private final ActivityStarter mActivityStarter;
     private final Vibrator mVibrator;
 
+    private boolean mQsExpanding;
+    private int mClockHeight;
+
+    private int mExpandedQsClockDateStart;
+
     public QuickStatusBarHeader(Context context, AttributeSet attrs) {
         super(context, attrs);
         mActivityStarter = Dependency.get(ActivityStarter.class);
@@ -167,6 +178,7 @@ public class QuickStatusBarHeader extends FrameLayout implements TunerService.Tu
 
         mHeaderQsPanel = findViewById(R.id.quick_qs_panel);
         mDatePrivacyView = findViewById(R.id.quick_status_bar_date_privacy);
+        mDatePrivacySeparator = findViewById(R.id.space);
         mStatusIconsView = findViewById(R.id.quick_qs_status_icons);
         mQSCarriers = findViewById(R.id.carrier_group);
         mContainer = findViewById(R.id.qs_container);
@@ -182,6 +194,7 @@ public class QuickStatusBarHeader extends FrameLayout implements TunerService.Tu
         mQsWeatherView.setOnLongClickListener(this);
         mQsWeatherHeaderView = findViewById(R.id.weather_view_header);
         mQsWeatherHeaderView.setOnLongClickListener(this);
+        mQSWeatherTemp = findViewById(R.id.weather_temp);
         mClockIconsSeparator = findViewById(R.id.separator);
         mRightLayout = findViewById(R.id.rightLayout);
         mDateContainer = findViewById(R.id.date_container);
@@ -189,16 +202,19 @@ public class QuickStatusBarHeader extends FrameLayout implements TunerService.Tu
 
         mClockContainer = findViewById(R.id.clock_container);
         mClockView = findViewById(R.id.clock);
-        mClockView.setQsHeader();
         mClockView.setOnClickListener(this);
         mClockView.setOnLongClickListener(this);
         mDatePrivacySeparator = findViewById(R.id.space);
+        mClockView.setPivotX(0);
+        mClockView.setPivotY(mClockView.getMeasuredHeight());
+
         // Tint for the battery icons are handled in setupHost()
         mBatteryRemainingIcon = findViewById(R.id.batteryRemainingIcon);
         mBatteryRemainingIcon.setOnClickListener(this);
         mBatteryRemainingIcon.setOnLongClickListener(this);
 
-        updateResources();
+	updateResources();
+
         Configuration config = mContext.getResources().getConfiguration();
         setDatePrivacyContainersWidth(config.orientation == Configuration.ORIENTATION_LANDSCAPE);
 
@@ -314,12 +330,8 @@ public class QuickStatusBarHeader extends FrameLayout implements TunerService.Tu
     }
 
     private void setDatePrivacyContainersWidth(boolean landscape) {
-        LinearLayout.LayoutParams lp = (LinearLayout.LayoutParams) mDateContainer.getLayoutParams();
-        lp.width = landscape ? WRAP_CONTENT : 0;
-        lp.weight = landscape ? 0f : 1f;
-        mDateContainer.setLayoutParams(lp);
-
-        lp = (LinearLayout.LayoutParams) mPrivacyContainer.getLayoutParams();
+        LinearLayout.LayoutParams lp =
+                (LinearLayout.LayoutParams) mPrivacyContainer.getLayoutParams();
         lp.width = landscape ? WRAP_CONTENT : 0;
         lp.weight = landscape ? 0f : 1f;
         mPrivacyContainer.setLayoutParams(lp);
@@ -358,6 +370,9 @@ public class QuickStatusBarHeader extends FrameLayout implements TunerService.Tu
                 R.dimen.rounded_corner_content_padding);
 
         int statusBarHeight = SystemBarUtils.getStatusBarHeight(mContext);
+
+        mExpandedQsClockDateStart = resources.getDimensionPixelSize(
+                R.dimen.qs_expanded_clock_date_padding_start);
 
         mStatusBarPaddingStart = resources.getDimensionPixelSize(
                 R.dimen.status_bar_padding_start);
@@ -401,15 +416,9 @@ public class QuickStatusBarHeader extends FrameLayout implements TunerService.Tu
         }
 
         MarginLayoutParams qqsLP = (MarginLayoutParams) mHeaderQsPanel.getLayoutParams();
-        if (largeScreenHeaderActive) {
-            qqsLP.topMargin = mContext.getResources()
-                    .getDimensionPixelSize(R.dimen.qqs_layout_margin_top);
-        } else if (!mUseCombinedQSHeader) {
-            qqsLP.topMargin = SystemBarUtils.getQuickQsOffsetHeight(mContext);
-        } else {
-            qqsLP.topMargin = mContext.getResources()
-                    .getDimensionPixelSize(R.dimen.large_screen_shade_header_min_height);
-        }
+        qqsLP.topMargin = largeScreenHeaderActive || !mUseCombinedQSHeader
+                ? mContext.getResources().getDimensionPixelSize(R.dimen.qqs_layout_margin_top)
+                : SystemBarUtils.getQuickQsOffsetHeight(mContext);
         mHeaderQsPanel.setLayoutParams(qqsLP);
 
         updateBatteryMode();
@@ -453,6 +462,8 @@ public class QuickStatusBarHeader extends FrameLayout implements TunerService.Tu
     }
 
     private void updateAlphaAnimator() {
+        int endPadding = mContext.getResources()
+                .getDimensionPixelSize(R.dimen.status_bar_left_clock_end_padding);
         if (mUseCombinedQSHeader) {
             mAlphaAnimator = null;
             return;
@@ -460,35 +471,45 @@ public class QuickStatusBarHeader extends FrameLayout implements TunerService.Tu
         TouchAnimator.Builder builder = new TouchAnimator.Builder()
                 // These views appear on expanding down
                 .addFloat(mDateView, "alpha", 0, 0, 1)
-                .addFloat(mClockDateView, "alpha", 1, 0, 0)
-                .addFloat(mQsWeatherHeaderView, "alpha", 0, 0, 1)
+                .addFloat(mQSCarriers, "alpha", 0, 0, 1)
                 .addFloat(mQsWeatherView, "alpha", 1, 0, 0)
-                .addFloat(mQSCarriers, "alpha", 0, 1)
-                // Use statusbar paddings when collapsed,
-                // align with QS when expanded, and animate translation
+                .addFloat(mQsWeatherHeaderView, "alpha", 0, 0, 1)
+                // Date is shown next to clock only in QQS
+                .addFloat(mClockDateView, "alpha", 1, 0, 0, 0, 0)
+                // Move the clock container
                 .addFloat(mClockContainer, "translationX",
-                    mHeaderPaddingLeft + mStatusBarPaddingStart, 0)
+                    mHeaderPaddingLeft + mStatusBarPaddingStart, mExpandedQsClockDateStart - endPadding)
+                .addFloat(mDateView, "translationX",
+                    mHeaderPaddingLeft + mStatusBarPaddingEnd, mExpandedQsClockDateStart)
+                // Enlarge clock on expanding down
+                .addFloat(mClockView, "scaleX", 1, LARGE_CLOCK_SCALE_X)
+                .addFloat(mClockView, "scaleY", 1, LARGE_CLOCK_SCALE_Y)
+                // Hide and show the right layout (status icons etc.)
+                .addFloat(mRightLayout, "alpha", 1, 0, 1)
                 .addFloat(mRightLayout, "translationX",
                     -(mHeaderPaddingRight + mStatusBarPaddingEnd), 0)
                 .setListener(new TouchAnimator.ListenerAdapter() {
                     @Override
                     public void onAnimationAtEnd() {
                         super.onAnimationAtEnd();
-                        if (!mIsSingleCarrier) {
-                            mIconContainer.addIgnoredSlots(mRssiIgnoredSlots);
-                        }
-                        // Make it gone so there's enough room for carrier names
+                        mDateView.setVisibility(View.VISIBLE);
                         mClockDateView.setVisibility(View.GONE);
+                        mQSCarriers.setVisibility(View.VISIBLE);
+                        updateRightLayout(true);
+                        if (mQSWeatherTemp != null) {
+                           mQSWeatherTemp.setSelected(true);
+                        }
                     }
 
                     @Override
                     public void onAnimationStarted() {
                         mClockDateView.setVisibility(View.VISIBLE);
                         mClockDateView.setFreezeSwitching(true);
+                        mDateView.setVisibility(View.VISIBLE);
+                        mQSCarriers.setVisibility(View.VISIBLE);
+                        setChipVisibility(mPrivacyChip.getVisibility() == View.VISIBLE);
+                        mQsWeatherView.setVisibility(View.GONE);
                         setSeparatorVisibility(false);
-                        if (!mIsSingleCarrier) {
-                            mIconContainer.addIgnoredSlots(mRssiIgnoredSlots);
-                        }
                     }
 
                     @Override
@@ -496,12 +517,37 @@ public class QuickStatusBarHeader extends FrameLayout implements TunerService.Tu
                         super.onAnimationAtStart();
                         mClockDateView.setFreezeSwitching(false);
                         mClockDateView.setVisibility(View.VISIBLE);
+                        mClockView.setVisibility(View.VISIBLE);
+                        mDateView.setVisibility(View.GONE);
+                        mQSCarriers.setVisibility(View.GONE);
                         setSeparatorVisibility(mShowClockIconsSeparator);
-                        // In QQS we never ignore RSSI.
-                        mIconContainer.removeIgnoredSlots(mRssiIgnoredSlots);
+                        updateRightLayout(false);
+                        mClockHeight = mClockView.getMeasuredHeight();
+                        if (mQsWeatherHeaderView != null) {
+                            mQsWeatherHeaderView.setVisibility(View.GONE);
+                        }
+                        if (mQsWeatherView != null) {
+                            mQsWeatherView.setVisibility(mQQSWeather != 1 ? View.VISIBLE : View.GONE);
+                        }
                     }
                 });
         mAlphaAnimator = builder.build();
+    }
+
+    private void updateRightLayout(boolean expanding) {
+        if (!mIsSingleCarrier) {
+            if (expanding) {
+                mIconContainer.addIgnoredSlots(mRssiIgnoredSlots);
+            } else {
+                mIconContainer.removeIgnoredSlots(mRssiIgnoredSlots);
+            }
+        }
+        // Align to the date view when expanded, otherwise to the parent.
+        int targetResId = expanding ? R.id.date : R.id.quick_qs_status_icons;
+        ConstraintLayout.LayoutParams lp = (ConstraintLayout.LayoutParams)
+                mRightLayout.getLayoutParams();
+        lp.topToTop = lp.bottomToBottom = targetResId;
+        mRightLayout.setLayoutParams(lp);
     }
 
     void setChipVisibility(boolean visibility) {
@@ -510,7 +556,15 @@ public class QuickStatusBarHeader extends FrameLayout implements TunerService.Tu
             mIconsAlphaAnimator = mIconsAlphaAnimatorFixed;
             mIconsAlphaAnimator.setPosition(mKeyguardExpansionFraction);
             setBatteryRemainingOnClick(false);
+            if (mQQSWeather > 0 && mQsWeatherHeaderView != null) {
+                mQSWeatherTemp.setSelected(false);
+                mQsWeatherHeaderView.setVisibility(View.GONE);
+            }
         } else {
+            if (mQQSWeather > 0 && mQsWeatherHeaderView != null) {
+                mQsWeatherHeaderView.setVisibility(View.VISIBLE);
+                mQSWeatherTemp.setSelected(true);
+            }
             mIconsAlphaAnimator = null;
             mIconContainer.setAlpha(1);
             mBatteryRemainingIcon.setAlpha(1);
@@ -548,6 +602,31 @@ public class QuickStatusBarHeader extends FrameLayout implements TunerService.Tu
         if (mIconsAlphaAnimator != null) {
             mIconsAlphaAnimator.setPosition(keyguardExpansionFraction);
         }
+        if (keyguardExpansionFraction == 1f && mBatteryRemainingIcon != null) {
+            mBatteryRemainingIcon.setClickable(true);
+        }
+
+        // Adjust clock translation since we're scaling it, and other dependent
+        // elements accordingly
+        int yOffset = (int) (keyguardExpansionFraction * mClockHeight
+                * (1 + LARGE_CLOCK_SCALE_Y - LARGE_CLOCK_SCALE_X));
+        mClockView.setTranslationY(-yOffset);
+        mDateView.setTranslationY(-yOffset / 2);
+        mRightLayout.setTranslationY(-yOffset / 2);
+
+        // HACK: For reasons unknown, QS carriers are top aligned when single sim and
+        // bottom aligned when dual, rather than being centered vertically, so let's
+        // translate it dynamically
+        mQSCarriers.setTranslationY((mIsSingleCarrier ? 1 : -1) * (yOffset / 4));
+
+        // Make changes in the right layout - hiding signal icons, changing constraints etc
+        // while its hidden (alpha=1) at half animation progress
+        boolean isQsExpanding = keyguardExpansionFraction > 0.5f;
+        if (isQsExpanding != mQsExpanding) {
+            mQsExpanding = isQsExpanding;
+            updateRightLayout(isQsExpanding);
+        }
+
         // If forceExpanded (we are opening QS from lockscreen), the animators have been set to
         // position = 1f.
         if (forceExpanded) {
@@ -579,8 +658,8 @@ public class QuickStatusBarHeader extends FrameLayout implements TunerService.Tu
 
         LinearLayout.LayoutParams datePrivacySeparatorLayoutParams =
                 (LinearLayout.LayoutParams) mDatePrivacySeparator.getLayoutParams();
-        LinearLayout.LayoutParams mClockIconsSeparatorLayoutParams =
-                (LinearLayout.LayoutParams) mClockIconsSeparator.getLayoutParams();
+        ConstraintLayout.LayoutParams mClockIconsSeparatorLayoutParams =
+                (ConstraintLayout.LayoutParams) mClockIconsSeparator.getLayoutParams();
         if (cutout != null) {
             Rect topCutout = cutout.getBoundingRectTop();
             if (topCutout.isEmpty() || hasCornerCutout) {
@@ -633,15 +712,13 @@ public class QuickStatusBarHeader extends FrameLayout implements TunerService.Tu
         mClockIconsSeparator.setVisibility(visible ? View.VISIBLE : View.GONE);
         mQSCarriers.setVisibility(visible ? View.GONE : View.VISIBLE);
 
-        LinearLayout.LayoutParams lp =
-                (LinearLayout.LayoutParams) mClockContainer.getLayoutParams();
+        ConstraintLayout.LayoutParams lp =
+                (ConstraintLayout.LayoutParams) mClockContainer.getLayoutParams();
         lp.width = visible ? 0 : WRAP_CONTENT;
-        lp.weight = visible ? 1f : 0f;
         mClockContainer.setLayoutParams(lp);
 
-        lp = (LinearLayout.LayoutParams) mRightLayout.getLayoutParams();
+        lp = (ConstraintLayout.LayoutParams) mRightLayout.getLayoutParams();
         lp.width = visible ? 0 : WRAP_CONTENT;
-        lp.weight = visible ? 1f : 0f;
         mRightLayout.setLayoutParams(lp);
     }
 
@@ -708,18 +785,9 @@ public class QuickStatusBarHeader extends FrameLayout implements TunerService.Tu
     }
 
     private void updateQSWeatherPosition() {
-        if (mQQSWeather == 0) {
-            mQsWeatherHeaderView.setVisibility(View.GONE);
-            mQsWeatherView.setVisibility(View.VISIBLE);
-        } else if (mQQSWeather == 1) {
-            mQsWeatherHeaderView.setVisibility(View.VISIBLE);
-            mQsWeatherView.setVisibility(View.GONE);
-        } else {
-            mQsWeatherHeaderView.setVisibility(View.VISIBLE);
-            mQsWeatherView.setVisibility(View.VISIBLE);
-        }
+        mQsWeatherView.setVisibility(mQQSWeather != 1 ? View.VISIBLE : View.GONE);
     }
-    
+
     @Override
     public void onTuningChanged(String key, String newValue) {
         mClockView.setClockVisibleByUser(!StatusBarIconController.getIconHideList(

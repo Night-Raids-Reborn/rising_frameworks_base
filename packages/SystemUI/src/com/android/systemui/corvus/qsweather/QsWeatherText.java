@@ -19,7 +19,6 @@ package com.android.systemui.corvus.qsweather;
 import android.content.ContentResolver;
 import android.content.Context;
 import android.content.res.Resources;
-import android.content.res.TypedArray;
 import android.database.ContentObserver;
 import android.graphics.Rect;
 import android.os.Handler;
@@ -156,6 +155,7 @@ public class QsWeatherText extends TextView implements
                         }
                         if (mQsWeatherEnabled != 0 && mQsWeatherEnabled != 5) {
                             setVisibility(View.VISIBLE);
+                            setTextSize(14.0f);
                         }
                     }
                 } else {
