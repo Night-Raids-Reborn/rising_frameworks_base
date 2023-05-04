@@ -268,15 +268,13 @@ public class DozeSensors {
                         false /* requiresProx */,
                         true /* immediatelyReRegister */),
         };
-        if (resources.getBoolean(com.android.systemui.R.bool.doze_proximity_sensor_supported)) {
-            setProxListening(false);  // Don't immediately start listening when we register.
-            mProximitySensor.register(
-                    proximityEvent -> {
-                        if (proximityEvent != null) {
-                            mProxCallback.accept(!proximityEvent.getBelow());
-                        }
-                    });
-        }
+        setProxListening(false);  // Don't immediately start listening when we register.
+        mProximitySensor.register(
+                proximityEvent -> {
+                    if (proximityEvent != null) {
+                        mProxCallback.accept(!proximityEvent.getBelow());
+                    }
+                });
 
         mDevicePostureController.addCallback(mDevicePostureCallback);
     }
