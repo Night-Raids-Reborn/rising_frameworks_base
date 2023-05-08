@@ -201,9 +201,11 @@ public class UdfpsController implements DozeReceiver, Dumpable {
     private boolean mIsPerfLockAcquired = false;
     private static final int BOOST_DURATION_TIMEOUT = 2000;
 
+    // UDFPS night light
     private boolean mNightModeActive;
     private int mAutoModeState;
-
+    private ColorDisplayManager colorDisplayManager;
+    
     private boolean mFrameworkDimming;
     private int[][] mBrightnessAlphaArray;
 
@@ -250,7 +252,6 @@ public class UdfpsController implements DozeReceiver, Dumpable {
         @Override
         public void showUdfpsOverlay(long requestId, int sensorId, int reason,
                 @NonNull IUdfpsOverlayControllerCallback callback) {
-            disableNightMode();
             mFgExecutor.execute(() -> UdfpsController.this.showUdfpsOverlay(
                     new UdfpsControllerOverlay(mContext, mFingerprintManager, mInflater,
                             mWindowManager, mAccessibilityManager, mStatusBarStateController,
@@ -267,7 +268,6 @@ public class UdfpsController implements DozeReceiver, Dumpable {
 
         @Override
         public void hideUdfpsOverlay(int sensorId) {
-            setNightMode(mNightModeActive, mAutoModeState);
             mFgExecutor.execute(() -> {
                 if (mKeyguardUpdateMonitor.isFingerprintDetectionRunning()) {
                     // if we get here, we expect keyguardUpdateMonitor's fingerprintRunningState
@@ -814,6 +814,10 @@ public class UdfpsController implements DozeReceiver, Dumpable {
 
         mLocalPowerManager = LocalServices.getService(PowerManagerInternal.class);
 	mPerf = new BoostFramework();
+
+	colorDisplayManager = mContext.getSystemService(ColorDisplayManager.class);
+        mAutoModeState = colorDisplayManager.getNightDisplayAutoMode();
+        mNightModeActive = colorDisplayManager.isNightDisplayActivated();
     }
 
     /**
@@ -901,6 +905,7 @@ public class UdfpsController implements DozeReceiver, Dumpable {
                     BOOST_DURATION_TIMEOUT);
             mIsPerfLockAcquired = true;
         }
+        setNightMode(1);
     }
 
     private void hideUdfpsOverlay() {
@@ -1245,6 +1250,7 @@ public class UdfpsController implements DozeReceiver, Dumpable {
             mPerf.perfLockRelease();
             mIsPerfLockAcquired = false;
         }
+        setNightMode(2);
     }
 
     /**
@@ -1262,20 +1268,27 @@ public class UdfpsController implements DozeReceiver, Dumpable {
         void onFingerDown();
     }
 
-    private void disableNightMode() {
-        ColorDisplayManager colorDisplayManager = mContext.getSystemService(ColorDisplayManager.class);
-        mAutoModeState = colorDisplayManager.getNightDisplayAutoMode();
-        mNightModeActive = colorDisplayManager.isNightDisplayActivated();
-        colorDisplayManager.setNightDisplayActivated(false);
-    }
-
-    private void setNightMode(boolean activated, int autoMode) {
-        ColorDisplayManager colorDisplayManager = mContext.getSystemService(ColorDisplayManager.class);
-        colorDisplayManager.setNightDisplayAutoMode(0);
-        if (autoMode == 0) {
-            colorDisplayManager.setNightDisplayActivated(activated);
-        } else if (autoMode == 1 || autoMode == 2) {
-            colorDisplayManager.setNightDisplayAutoMode(autoMode);
+    /**
+     * 1 - disable night light
+     * 2 - restore settings
+     */
+    private void setNightMode(int state) {
+    	switch (state) {
+    	case 1:
+            mAutoModeState = colorDisplayManager.getNightDisplayAutoMode();
+            mNightModeActive = colorDisplayManager.isNightDisplayActivated();
+            colorDisplayManager.setNightDisplayActivated(false);
+            break;
+        case 2:
+            colorDisplayManager.setNightDisplayAutoMode(0);
+            if (mAutoModeState == 0) {
+                colorDisplayManager.setNightDisplayActivated(mNightModeActive);
+            } else if (mAutoModeState == 1 || mAutoModeState == 2) {
+                colorDisplayManager.setNightDisplayAutoMode(mAutoModeState);
+            }
+            break;
+        default:
+            break;
         }
     }
 }
