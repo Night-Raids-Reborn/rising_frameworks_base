@@ -509,6 +509,7 @@ public class QuickStatusBarHeader extends FrameLayout implements TunerService.Tu
                         mClockDateView.setVisibility(View.GONE);
                         mQSCarriers.setVisibility(View.VISIBLE);
                         updateRightLayout(true);
+                        mQsWeatherView.setVisibility(View.VISIBLE);
                     }
 
                     @Override
@@ -518,7 +519,6 @@ public class QuickStatusBarHeader extends FrameLayout implements TunerService.Tu
                         mDateView.setVisibility(View.VISIBLE);
                         mQSCarriers.setVisibility(View.VISIBLE);
                         setChipVisibility(mPrivacyChip.getVisibility() == View.VISIBLE);
-                        mQsWeatherView.setVisibility(mQQSWeather != 1 ? View.VISIBLE : View.GONE);
                         setSeparatorVisibility(false);
                     }
 
@@ -780,20 +780,11 @@ public class QuickStatusBarHeader extends FrameLayout implements TunerService.Tu
         mDatePrivacyView.setScrollY(scrollY);
     }
 
-    private void updateQSWeatherPosition() {
-        mQsWeatherView.setVisibility(mQQSWeather != 1 ? View.VISIBLE : View.GONE);
-    }
-
     @Override
     public void onTuningChanged(String key, String newValue) {
         mClockView.setClockVisibleByUser(!StatusBarIconController.getIconHideList(
                 mContext, newValue).contains("clock"));
         switch (key) {
-            case QS_WEATHER_POSITION:
-                mQQSWeather =
-                       TunerService.parseInteger(newValue, 2);
-                updateQSWeatherPosition();
-                break;
             case QS_HEADER_IMAGE:
                 mHeaderImageValue =
                        TunerService.parseInteger(newValue, 0);
