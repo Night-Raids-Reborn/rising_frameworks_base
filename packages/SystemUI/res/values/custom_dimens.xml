@@ -121,4 +121,7 @@
 
     <!-- Status bar logo -->  
     <dimen name="statusbar_logo_size">24dp</dimen>
+
+    <!-- Volume app icon -->  
+    <dimen name="volume_app_icon_max_size">108dp</dimen>
 </resources>
