@@ -11623,6 +11623,11 @@ public final class Settings {
         public static final String KG_CUSTOM_CLOCK_COLOR_ENABLED = "kg_custom_clock_color_enabled";
 
         /**
+         * @hide
+         */
+        public static final String KG_CUSTOM_CLOCK_TOP_MARGIN = "kg_custom_clock_top_margin";
+
+        /**
          * Whether to pulse ambient on new music tracks
          * @hide
          */
