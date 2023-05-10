@@ -48,7 +48,7 @@
     <dimen name="qs_top_brightness_margin_top">0dp</dimen>
     <dimen name="qs_top_brightness_margin_bottom">10dp</dimen>
     <dimen name="qs_bottom_brightness_margin_top">10dp</dimen>
-    
+
     <!-- Height of the landscape battery icon in the status bar. -->
     <dimen name="status_bar_battery_icon_height_landscape">12.5dp</dimen>
     
@@ -118,4 +118,7 @@
     <!-- A11 QS style -->  
     <dimen name="custom_qs_panel_padding_top">0dp</dimen>
     <dimen name="custom_notification_row_padding">16dp</dimen>
+
+    <!-- Status bar logo -->  
+    <dimen name="statusbar_logo_size">24dp</dimen>
 </resources>

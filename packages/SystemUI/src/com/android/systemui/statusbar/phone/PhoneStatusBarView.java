@@ -299,7 +299,7 @@ public class PhoneStatusBarView extends FrameLayout implements Callbacks {
         layoutParams.height = mStatusBarHeight - waterfallTopInset;
 
         int statusBarPaddingTop = getResources().getDimensionPixelSize(
-                R.dimen.status_bar_padding_top);
+                R.dimen.status_bar_padding_top_insets);
         int statusBarPaddingStart = getResources().getDimensionPixelSize(
                 R.dimen.status_bar_padding_start);
         int statusBarPaddingEnd = getResources().getDimensionPixelSize(
