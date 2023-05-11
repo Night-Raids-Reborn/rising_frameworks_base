@@ -2960,7 +2960,7 @@ public class PhoneWindowManager implements WindowManagerPolicy {
             }
 
             boolean threeFingerGesture = Settings.System.getIntForUser(resolver,
-                    Settings.System.THREE_FINGER_GESTURE, 1, UserHandle.USER_CURRENT) == 1;
+                    Settings.System.THREE_FINGER_GESTURE, 0, UserHandle.USER_CURRENT) == 1;
             if (mSwipeToScreenshot != null) {
                 if (haveEnableGesture != threeFingerGesture) {
                     haveEnableGesture = threeFingerGesture;
