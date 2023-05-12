@@ -141,6 +141,7 @@ import com.android.systemui.InitController;
 import com.android.systemui.Prefs;
 import com.android.systemui.R;
 import com.android.systemui.accessibility.floatingmenu.AccessibilityFloatingMenuController;
+import com.android.systemui.adaptivecharging.AdaptiveChargingManager;
 import com.android.systemui.animation.ActivityLaunchAnimator;
 import com.android.systemui.animation.DelegateLaunchAnimatorController;
 import com.android.systemui.assist.AssistManager;
@@ -541,6 +542,7 @@ public class CentralSurfacesImpl implements CoreStartable, CentralSurfaces, Tune
 
    // System Manager
     private boolean isSysManagerIstantiated = false;
+    private AdaptiveChargingManager mAdaptiveChargingManager;
 
     // settings
     private QSPanelController mQSPanelController;
@@ -3647,28 +3649,10 @@ public class CentralSurfacesImpl implements CoreStartable, CentralSurfaces, Tune
             if (!isSysManagerIstantiated) {
                 SystemManagerUtils.initSystemManager(mContext);
                 isSysManagerIstantiated = true;
-                SystemManagerUtils.startIdleService(mContext);
-                SystemManagerUtils.cacheCleaner(CentralSurfaces.getPackageManagerForUser(mContext, mLockscreenUserManager.getCurrentUserId()));
-                int runtimePowerMode = Settings.System.getIntForUser(mContext.getContentResolver(),
-                                            Settings.System.SYSTEM_MANAGER_RUNTIME_POWER_MODE, 0, mLockscreenUserManager.getCurrentUserId());
-                if (Settings.Secure.getIntForUser(mContext.getContentResolver(),
-                                        Settings.Secure.SYSTEM_MANAGER_AGGRESSIVE_IDLE_MODE, 0, mLockscreenUserManager.getCurrentUserId()) == 1) {
-                    Settings.Secure.putIntForUser(mContext.getContentResolver(),
-                                        Settings.Secure.SYSTEM_MANAGER_AGGRESSIVE_IDLE_MODE_TRIGGER, 1,
-                                        mLockscreenUserManager.getCurrentUserId());
-                }
-            } else {
-                SystemManagerUtils.startIdleService(mContext);
-                SystemManagerUtils.cacheCleaner(CentralSurfaces.getPackageManagerForUser(mContext, mLockscreenUserManager.getCurrentUserId()));
-                int runtimePowerMode = Settings.System.getIntForUser(mContext.getContentResolver(),
-                                            Settings.System.SYSTEM_MANAGER_RUNTIME_POWER_MODE, 0, mLockscreenUserManager.getCurrentUserId());
-                if (Settings.Secure.getIntForUser(mContext.getContentResolver(),
-                                        Settings.Secure.SYSTEM_MANAGER_AGGRESSIVE_IDLE_MODE, 0, mLockscreenUserManager.getCurrentUserId()) == 1) {
-                    Settings.Secure.putIntForUser(mContext.getContentResolver(),
-                                        Settings.Secure.SYSTEM_MANAGER_AGGRESSIVE_IDLE_MODE_TRIGGER, 1,
-                                        mLockscreenUserManager.getCurrentUserId());
-                }
             }
+            try {
+                performSystemMangerService(1);
+            } catch (Exception e) {}
         }
 
         @Override
@@ -3699,16 +3683,39 @@ public class CentralSurfacesImpl implements CoreStartable, CentralSurfaces, Tune
 
             });
             DejankUtils.stopDetectingBlockingIpcs(tag);
-            SystemManagerUtils.cancelIdleService();
-    	    int runtimePowerMode = Settings.System.getIntForUser(mContext.getContentResolver(),
-                                            Settings.System.SYSTEM_MANAGER_RUNTIME_POWER_MODE, 0, mLockscreenUserManager.getCurrentUserId());
-            if (Settings.Secure.getIntForUser(mContext.getContentResolver(),
-                                            Settings.Secure.SYSTEM_MANAGER_AGGRESSIVE_IDLE_MODE, 0, mLockscreenUserManager.getCurrentUserId()) == 1) {
-                    Settings.Secure.putIntForUser(mContext.getContentResolver(),
-                                                Settings.Secure.SYSTEM_MANAGER_AGGRESSIVE_IDLE_MODE_TRIGGER, 0,
-                                                mLockscreenUserManager.getCurrentUserId());
+            if (!isSysManagerIstantiated) {
+                SystemManagerUtils.initSystemManager(mContext);
+                isSysManagerIstantiated = true;
             }
+            try {
+                performSystemMangerService(0);
+            } catch (Exception e) {}
         }
+
+	public void performSystemMangerService(int trigger) {
+	    if (trigger == 1) {
+               SystemManagerUtils.startIdleService(mContext);
+               SystemManagerUtils.cacheCleaner(CentralSurfaces.getPackageManagerForUser(mContext, mLockscreenUserManager.getCurrentUserId()));
+            } else {
+               SystemManagerUtils.cancelIdleService();
+            }
+            if (isAggressiveIdleEnabled()) {
+                Settings.Secure.putIntForUser(mContext.getContentResolver(),
+                     Settings.Secure.SYSTEM_MANAGER_AGGRESSIVE_IDLE_MODE_TRIGGER, trigger,
+                     mLockscreenUserManager.getCurrentUserId());
+		if (trigger == 1) {
+		    mAdaptiveChargingManager.setEnabled(true);
+		} else {
+		    mAdaptiveChargingManager.setEnabled(false);
+		    mAdaptiveChargingManager.setAdaptiveChargingDeadline(-1);
+		}
+            }
+	}
+
+	public boolean isAggressiveIdleEnabled() {
+	    return Settings.Secure.getIntForUser(mContext.getContentResolver(),
+                                        Settings.Secure.SYSTEM_MANAGER_AGGRESSIVE_IDLE_MODE, 0, mLockscreenUserManager.getCurrentUserId()) == 1;
+	}
 
         @Override
         public void onFinishedWakingUp() {
