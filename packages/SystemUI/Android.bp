@@ -182,6 +182,7 @@ android_library {
         "android.hardware.power-V3-java",
 	"googlebattery-lib",
         "faceunlock_framework",
+        "vendor.google.google_battery-V1-java",
     ],
     manifest: "AndroidManifest.xml",
     additional_manifests: ["LineageManifest.xml"],

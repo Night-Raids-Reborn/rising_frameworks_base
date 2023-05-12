@@ -2768,4 +2768,7 @@
 
     <!-- Title for notification of low stylus battery. [CHAR_LIMIT=NONE] -->
     <string name="stylus_battery_low">Stylus battery low</string>
+
+    <!-- Adaptive charging -->
+    <string name="adaptive_charging_time_estimate">%1$s • Adaptive charging (full by %2$s)</string>
 </resources>

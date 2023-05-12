@@ -102,10 +102,14 @@ import com.android.systemui.statusbar.phone.KeyguardIndicationTextView;
 import com.android.systemui.statusbar.phone.StatusBarKeyguardViewManager;
 import com.android.systemui.statusbar.policy.KeyguardStateController;
 import com.android.systemui.util.concurrency.DelayableExecutor;
+import com.android.systemui.util.DeviceConfigProxy;
 import com.android.systemui.util.wakelock.SettableWakeLock;
 import com.android.systemui.util.wakelock.WakeLock;
 
+import com.android.systemui.adaptivecharging.AdaptiveChargingManager;
+
 import java.io.PrintWriter;
+import java.util.concurrent.TimeUnit;
 import java.text.NumberFormat;
 import java.util.HashSet;
 import java.util.Set;
@@ -162,6 +166,17 @@ public class KeyguardIndicationController {
     private final KeyguardBypassController mKeyguardBypassController;
     private final AccessibilityManager mAccessibilityManager;
     private final Handler mHandler;
+    
+    // Adaptive Charging
+    private boolean mAdaptiveChargingActive;
+    private boolean mAdaptiveChargingEnabledInSettings;
+    @VisibleForTesting
+    private AdaptiveChargingManager mAdaptiveChargingManager;
+    @VisibleForTesting
+    private AdaptiveChargingManager.AdaptiveChargingStatusReceiver mAdaptiveChargingStatusReceiver;
+    private final DeviceConfigProxy mDeviceConfig;
+    private long mEstimatedChargeCompletion;
+    private boolean mIsCharging;
 
     @VisibleForTesting
     public KeyguardIndicationRotateTextViewController mRotateTextViewController;
@@ -259,7 +274,8 @@ public class KeyguardIndicationController {
             KeyguardBypassController keyguardBypassController,
             AccessibilityManager accessibilityManager,
             FaceHelpMessageDeferral faceHelpMessageDeferral,
-            KeyguardLogger keyguardLogger) {
+            KeyguardLogger keyguardLogger,
+            DeviceConfigProxy deviceConfigProxy) {
         mContext = context;
         mBroadcastDispatcher = broadcastDispatcher;
         mDevicePolicyManager = devicePolicyManager;
@@ -309,6 +325,34 @@ public class KeyguardIndicationController {
                 }
             }
         };
+        
+        mBroadcastReceiver = new BroadcastReceiver() {
+            @Override
+            public final void onReceive(Context context, Intent intent) {
+                if ("com.google.android.systemui.adaptivecharging.ADAPTIVE_CHARGING_DEADLINE_SET".equals(intent.getAction())) {
+                    triggerAdaptiveChargingStatusUpdate();
+                }
+            }
+        };
+        mAdaptiveChargingStatusReceiver = new AdaptiveChargingManager.AdaptiveChargingStatusReceiver() {
+            @Override
+            public void onDestroyInterface() {}
+
+            @Override
+            public void onReceiveStatus(int seconds, String stage) {
+                boolean wasActive = mAdaptiveChargingActive;
+                mAdaptiveChargingActive = AdaptiveChargingManager.isActive(stage, seconds);
+                long currentEstimation = mEstimatedChargeCompletion;
+                long currentTimeMillis = System.currentTimeMillis();
+                mEstimatedChargeCompletion = TimeUnit.SECONDS.toMillis(seconds + 29) + currentTimeMillis;
+                long abs = Math.abs(mEstimatedChargeCompletion - currentEstimation);
+                if (mAdaptiveChargingActive != wasActive || (mAdaptiveChargingActive && abs > TimeUnit.SECONDS.toMillis(30L))) {
+                    updateDeviceEntryIndication(true);
+                }
+            }
+        };
+        mDeviceConfig = deviceConfigProxy;
+        mAdaptiveChargingManager = new AdaptiveChargingManager(context);
     }
 
     /** Call this after construction to finish setting up the instance. */
@@ -333,6 +377,16 @@ public class KeyguardIndicationController {
                     IBatteryPropertiesRegistrar.Stub.asInterface(
                     ServiceManager.getService("batteryproperties"));
         }
+        
+        DelayableExecutor delayableExecutor = mExecutor;
+        mDeviceConfig.addOnPropertiesChangedListener("adaptive_charging", delayableExecutor,
+            (properties) -> {
+                if (properties.getKeyset().contains("adaptive_charging_enabled")) {
+                    triggerAdaptiveChargingStatusUpdate();
+                }
+        });
+        triggerAdaptiveChargingStatusUpdate();
+        mBroadcastDispatcher.registerReceiver(mBroadcastReceiver, new IntentFilter("com.google.android.systemui.adaptivecharging.ADAPTIVE_CHARGING_DEADLINE_SET"), null, UserHandle.ALL);
     }
 
     public void setIndicationArea(ViewGroup indicationArea) {
@@ -950,6 +1004,12 @@ public class KeyguardIndicationController {
         }
 
         final boolean hasChargingTime = mChargingTimeRemaining > 0;
+        
+	if (mIsCharging && mAdaptiveChargingEnabledInSettings && mAdaptiveChargingActive) {
+            String formatTimeToFull = mAdaptiveChargingManager.formatTimeToFull(mEstimatedChargeCompletion);
+            return mContext.getResources().getString(R.string.adaptive_charging_time_estimate, NumberFormat.getPercentInstance().format(mBatteryLevel / 100.0f), formatTimeToFull);
+	}
+
         if (mPowerPluggedInWired) {
             switch (mChargingSpeed) {
                 case BatteryStatus.CHARGING_FAST:
@@ -1158,6 +1218,7 @@ public class KeyguardIndicationController {
             boolean isChargingOrFull = status.status == BatteryManager.BATTERY_STATUS_CHARGING
                     || status.isCharged();
             boolean wasPluggedIn = mPowerPluggedIn;
+            mIsCharging = isChargingOrFull;
             mPowerPluggedInWired = status.isPluggedInWired() && isChargingOrFull;
             mPowerPluggedInWireless = status.isPluggedInWireless() && isChargingOrFull;
             mPowerPluggedInDock = status.isPluggedInDock() && isChargingOrFull;
@@ -1194,6 +1255,11 @@ public class KeyguardIndicationController {
                 } else if (wasPluggedIn && !mPowerPluggedIn) {
                     hideTransientIndication();
                 }
+            }
+            if (isChargingOrFull) {
+                triggerAdaptiveChargingStatusUpdate();
+            } else {
+                mAdaptiveChargingActive = false;
             }
         }
 
@@ -1546,4 +1612,22 @@ public class KeyguardIndicationController {
             }
         }
     };
+
+    private void refreshAdaptiveChargingEnabled() {
+        boolean supported = mAdaptiveChargingManager.isAvailable();
+        if (supported) {
+            mAdaptiveChargingEnabledInSettings = mAdaptiveChargingManager.getEnabled();
+        } else {
+            mAdaptiveChargingEnabledInSettings = false;
+        }
+    }
+  
+    public void triggerAdaptiveChargingStatusUpdate() {
+        refreshAdaptiveChargingEnabled();
+        if (mAdaptiveChargingEnabledInSettings) {
+            mAdaptiveChargingManager.queryStatus(mAdaptiveChargingStatusReceiver);
+        } else {
+            mAdaptiveChargingActive = false;
+        }
+    }
 }
