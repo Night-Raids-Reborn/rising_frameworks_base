@@ -28,11 +28,14 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
+import android.content.pm.PackageInfo;
+import android.content.pm.IPackageDataObserver;
 import android.hardware.power.Boost;
 import android.hardware.power.Mode;
 import android.location.LocationManager;
 import android.os.Handler;
 import android.os.UserHandle;
+import android.os.PowerManager;
 import android.os.PowerManagerInternal;
 import android.provider.Settings;
 
@@ -41,7 +44,10 @@ import com.android.server.LocalServices;
 import com.android.systemui.Dependency;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 public class SystemManagerUtils {
     static String TAG = "SystemManagerUtils";
@@ -49,18 +55,31 @@ public class SystemManagerUtils {
     static Handler h = new Handler();
     static Runnable mStartManagerInstance;
     static Runnable mStopManagerInstance;
+    static PowerManagerInternal mLocalPowerManager;
     static SystemManagerController mSysManagerController;
     static List<ActivityManager.RunningAppProcessInfo> RunningServices;
     static ActivityManager localActivityManager;
     static final long IDLE_TIME_NEEDED = 20000;
 
+    private static final Set<String> essentialProcesses = new HashSet<>(Arrays.asList(
+            "com.android.",
+            "org.rising",
+            "android",
+            "launcher",
+            "ims",
+            "dialer",
+            "telepho",
+            "sms",
+            "messag"
+    ));
+
     public static void initSystemManager(Context context) {
    	mSysManagerController = new SystemManagerController(context);
+   	mLocalPowerManager = LocalServices.getService(PowerManagerInternal.class);
 
         mStartManagerInstance = new Runnable() {
             public void run() {
-                    idleModeHandler(true);
-                    killBackgroundProcesses(context);
+                idleModeHandler(true);
             }
         };
 
@@ -72,13 +91,17 @@ public class SystemManagerUtils {
     }
 
     public static void startIdleService(Context context) {
-        if (IDLE_TIME_NEEDED > timeBeforeAlarm(context) && timeBeforeAlarm(context) != 0) {
-            h.postDelayed(mStartManagerInstance,100);
+        long nextAlarmTime = timeBeforeAlarm(context);
+        if (nextAlarmTime == 0) {
+            // No next alarm, start the service immediately.
+            h.post(mStartManagerInstance);
+        } else if (nextAlarmTime > IDLE_TIME_NEEDED) {
+            // Next alarm is after the idle time, start the service after the idle time.
+            h.postDelayed(mStartManagerInstance, IDLE_TIME_NEEDED);
         } else {
-            h.postDelayed(mStartManagerInstance,IDLE_TIME_NEEDED /*10ms*/);
-        }
-        if (timeBeforeAlarm(context) != 0) {
-            h.postDelayed(mStopManagerInstance,(timeBeforeAlarm(context) - 900000));
+            // Next alarm is before the idle time, start the service right away and stop it before the alarm goes off.
+            h.post(mStartManagerInstance);
+            h.postDelayed(mStopManagerInstance, nextAlarmTime - 900000);
         }
     }
 
@@ -90,7 +113,6 @@ public class SystemManagerUtils {
     }
 
     public static void idleModeHandler(boolean idle) {
-        PowerManagerInternal mLocalPowerManager = LocalServices.getService(PowerManagerInternal.class);
         if (mLocalPowerManager != null) {
           mLocalPowerManager.setPowerMode(Mode.DEVICE_IDLE, idle);
         }
@@ -102,7 +124,6 @@ public class SystemManagerUtils {
     }
 
      public static void boostingServiceHandler(boolean enable, int boostingLevel) {
-        PowerManagerInternal mLocalPowerManager = LocalServices.getService(PowerManagerInternal.class);
         if (mLocalPowerManager != null) {
             switch (boostingLevel) {
             	case 0:
@@ -134,35 +155,78 @@ public class SystemManagerUtils {
         idleModeHandler(false);
     }
 
-    public static long timeBeforeAlarm(Context context) {
-        AlarmManager.AlarmClockInfo info =
-                ((AlarmManager)context.getSystemService(Context.ALARM_SERVICE)).getNextAlarmClock();
-        if (info != null) {
-            long alarmTime = info.getTriggerTime();
-            long realTime = alarmTime - System.currentTimeMillis();
-            return realTime;
-        } else {
-            return 0;
+   public static void enterPowerSaveMode(Context context, boolean enable) {
+        PowerManager powerManager = (PowerManager) context.getSystemService(Context.POWER_SERVICE);
+        if (powerManager != null) {
+            powerManager.setAdaptivePowerSaveEnabled(enable);
         }
-    }
-
-    public static void killBackgroundProcesses(Context context) {
-        localActivityManager = (ActivityManager) context.getSystemService(Context.ACTIVITY_SERVICE);
-        RunningServices = localActivityManager.getRunningAppProcesses();
-        for (int i=0; i < RunningServices.size(); i++) {
-            if (!RunningServices.get(i).pkgList[0].toString().toLowerCase().contains("com.android.") &&
-                !RunningServices.get(i).pkgList[0].toString().toLowerCase().contains("org.rising") &&
-                !RunningServices.get(i).pkgList[0].toString().toLowerCase().equals("android") &&
-                !RunningServices.get(i).pkgList[0].toString().toLowerCase().contains("launcher") &&
-                !RunningServices.get(i).pkgList[0].toString().toLowerCase().contains("ims") &&
-                !RunningServices.get(i).pkgList[0].toString().toLowerCase().contains("messaging") &&
-                RunningServices.get(i).pkgList[0].toString().toLowerCase().contains("camera") &&
-                RunningServices.get(i).pkgList[0].toString().toLowerCase().contains("settings") &&
-                RunningServices.get(i).pkgList[0].toString().toLowerCase().contains("gms") &&
-                RunningServices.get(i).pkgList[0].toString().toLowerCase().contains("google")) {
-                    localActivityManager.killBackgroundProcesses(RunningServices.get(i).pkgList[0].toString());
+        if (enable) {
+            if (mLocalPowerManager != null) {
+                mLocalPowerManager.setPowerBoost(Boost.DISPLAY_UPDATE_IMMINENT, 500);
             }
         }
+   }
+
+    public static long timeBeforeAlarm(Context context) {
+        AlarmManager alarmManager = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
+        if (alarmManager == null) {
+            return 0;
+        }
+
+        AlarmClockInfo nextAlarm = alarmManager.getNextAlarmClock();
+        return nextAlarm == null ? 0 : nextAlarm.getTriggerTime() - System.currentTimeMillis();
     }
 
+   private static boolean isEssentialProcess(String packageName) {
+      return essentialProcesses.stream().anyMatch(packageName::startsWith);
+   }
+
+   private static void deleteAllAppCacheFiles(PackageManager pm) {
+      List<PackageInfo> installedPackages = pm.getInstalledPackages(PackageManager.GET_META_DATA);
+      for (PackageInfo packageInfo : installedPackages) {
+          pm.deleteApplicationCacheFiles(packageInfo.packageName, null);
+      }
+   }
+
+   public static void deepClean(Context context, PackageManager pm) {
+      ActivityManager activityManager = (ActivityManager) context.getSystemService(Context.ACTIVITY_SERVICE);
+      HashSet<String> processesToKill = new HashSet<>();
+
+      activityManager.getRunningAppProcesses().forEach(processInfo -> {
+         try {
+            PackageInfo packageInfo = pm.getPackageInfo(processInfo.processName, PackageManager.GET_META_DATA);
+            String packageName = packageInfo.packageName.toLowerCase();
+            if (!isEssentialProcess(packageName) && packageName.contains("camera") && packageName.contains("settings")) {
+               processesToKill.add(processInfo.processName);
+            }
+         } catch (PackageManager.NameNotFoundException ignored) {
+         }
+      });
+
+      processesToKill.forEach(processToKill -> {
+         activityManager.forceStopPackage(processToKill);
+      });
+
+      deleteAllAppCacheFiles(pm);
+   }
+
+   public static void killBackgroundProcesses(Context context) {
+      ActivityManager activityManager = (ActivityManager) context.getSystemService(Context.ACTIVITY_SERVICE);
+      List<ActivityManager.RunningAppProcessInfo> runningProcesses = activityManager.getRunningAppProcesses();
+      HashSet<String> processesToKill = new HashSet<>();
+
+      runningProcesses.forEach(processInfo -> {
+         for (String packageName : processInfo.pkgList) {
+            String lowercasePackageName = packageName.toLowerCase();
+            if (!essentialProcesses.contains(lowercasePackageName)
+                    && lowercasePackageName.contains("camera")
+                    && lowercasePackageName.contains("settings")) {
+               processesToKill.add(processInfo.processName);
+               break; // Break out of the inner loop if a match is found
+            }
+         }
+      });
+
+      processesToKill.forEach(activityManager::killBackgroundProcesses);
+   }
 }

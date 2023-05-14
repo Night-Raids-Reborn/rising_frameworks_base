@@ -94,6 +94,7 @@ public class PowerNotificationWarnings implements PowerUI.WarningsUI {
     private static final String TAG_BATTERY = "low_battery";
     private static final String TAG_TEMPERATURE = "high_temp";
     private static final String TAG_AUTO_SAVER = "auto_saver";
+    private static final String TAG_SYS_MANAGER = "system_manager";
 
     private static final String INTERACTION_JANK_TAG = "start_power_saver";
 
@@ -101,6 +102,7 @@ public class PowerNotificationWarnings implements PowerUI.WarningsUI {
     private static final int SHOWING_WARNING = 1;
     private static final int SHOWING_INVALID_CHARGER = 3;
     private static final int SHOWING_AUTO_SAVER_SUGGESTION = 4;
+    private static final int SYS_MANAGER_NOTIF_ID = 1234;
     private static final String[] SHOWING_STRINGS = {
         "SHOWING_NOTHING",
         "SHOWING_WARNING",
@@ -381,6 +383,29 @@ public class PowerNotificationWarnings implements PowerUI.WarningsUI {
         final Notification n = nb.build();
         mNoMan.notifyAsUser(
                 TAG_AUTO_SAVER, SystemMessage.NOTE_AUTO_SAVER_SUGGESTION, n, UserHandle.ALL);
+    }
+
+    public static void showSystemManagerNotification(Context context, NotificationManager notifMan, boolean charging, boolean enabled) {
+    	CharSequence message = context.getString(charging ? R.string.adaptive_charging_text : R.string.aggressive_idle_text);
+        final Notification.Builder nb =
+                new Notification.Builder(context, NotificationChannels.SYSTEM_MANAGER)
+                        .setSmallIcon(charging ? R.drawable.ic_charger : R.drawable.ic_battery_plus)
+                        .setWhen(0)
+                        .setShowWhen(false)
+                        .setOngoing(true)
+                        .setContentTitle(context.getString(charging ? R.string.adaptive_charging_title : R.string.aggressive_idle_title))
+                        .setStyle(new Notification.BigTextStyle().bigText(message))
+                        .setContentText(message)
+                        .setColor(context.getColor(
+                                com.android.internal.R.color.system_notification_accent_color));
+        SystemUIApplication.overrideNotificationAppName(context, nb, false);
+        final Notification n = nb.build();
+	if (enabled) {
+	    notifMan.cancelAsUser(TAG_SYS_MANAGER, SYS_MANAGER_NOTIF_ID, UserHandle.ALL);
+            notifMan.notifyAsUser(TAG_SYS_MANAGER, SYS_MANAGER_NOTIF_ID, n, UserHandle.ALL);
+        } else {
+            notifMan.cancelAsUser(TAG_SYS_MANAGER, SYS_MANAGER_NOTIF_ID, UserHandle.ALL);
+        }
     }
 
     private String getHybridContentString(String percentage) {
