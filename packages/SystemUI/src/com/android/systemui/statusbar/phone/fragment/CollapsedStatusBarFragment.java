@@ -92,8 +92,6 @@ import com.android.systemui.util.CarrierConfigTracker.DefaultDataSubscriptionCha
 import com.android.systemui.util.settings.SecureSettings;
 import com.android.systemui.tuner.TunerService;
 
-import com.android.systemui.rising.logo.LogoImage;
-
 import lineageos.providers.LineageSettings;
 
 import java.io.PrintWriter;
@@ -168,8 +166,8 @@ public class CollapsedStatusBarFragment extends Fragment implements CommandQueue
     private Map<Startable, Startable.State> mStartableStates = new ArrayMap<>();
 
     private View mBatteryBar;
-
-    private View mLeftLogo;
+    
+    private View mLeftLogoLayout;
 
     private SignalCallback mSignalCallback = new SignalCallback() {
         @Override
@@ -310,7 +308,7 @@ public class CollapsedStatusBarFragment extends Fragment implements CommandQueue
         mBatteryMeterView = mStatusBar.findViewById(R.id.battery);
         mBatteryMeterView.addCallback(mBatteryMeterViewCallback);
         mOngoingCallChip = mStatusBar.findViewById(R.id.ongoing_call_chip);
-        mLeftLogo = mStatusBar.findViewById(R.id.statusbar_logo);
+        mLeftLogoLayout = mStatusBar.findViewById(R.id.left_logo_icon_area);
         showEndSideContent(false);
         showClock(false);
         initEmergencyCryptkeeperText();
@@ -671,16 +669,12 @@ public class CollapsedStatusBarFragment extends Fragment implements CommandQueue
     }
 
     public void hideNotificationIconArea(boolean animate) {
-    	if (LogoImage.getLogoPosition(getContext()) == 0) {
-            animateFullyHide(mLeftLogo, animate);
-        }
-        animateHide(mNotificationIconAreaInner, animate);
+    	animateHide(mLeftLogoLayout, animate);
+    	animateHide(mNotificationIconAreaInner, animate);
     }
 
     public void showNotificationIconArea(boolean animate) {
-    	if (LogoImage.getLogoPosition(getContext()) == 0) {
-            animateShow(mLeftLogo, animate);
-        }
+    	animateShow(mLeftLogoLayout, animate);
         animateShow(mNotificationIconAreaInner, animate);
     }
 
@@ -720,13 +714,6 @@ public class CollapsedStatusBarFragment extends Fragment implements CommandQueue
      */
     private void animateHide(final View v, boolean animate) {
         animateHiddenState(v, View.INVISIBLE, animate);
-    }
-
-    /**
-     * Hides a view and its hierarchy.
-     */
-    private void animateFullyHide(final View v, boolean animate) {
-        animateHiddenState(v, View.GONE, animate);
     }
 
     /**

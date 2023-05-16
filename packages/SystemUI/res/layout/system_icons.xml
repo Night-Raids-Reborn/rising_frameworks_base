@@ -64,7 +64,7 @@
             systemui:isStatusBar="true"
         />
 
-        <com.android.systemui.rising.logo.LogoImageViewRight
+        <com.android.systemui.rising.logo.LogoImageView
             android:id="@+id/statusbar_logo_right"
             android:layout_width="@dimen/statusbar_logo_size"
             android:layout_height="@dimen/statusbar_logo_size"

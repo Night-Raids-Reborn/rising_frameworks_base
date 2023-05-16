@@ -509,10 +509,6 @@ public class ThemeOverlayController implements CoreStartable, Dumpable, TunerSer
                 },
                 UserHandle.USER_ALL);
 
-        if (!mIsMonetEnabled) {
-            return;
-        }
-
         mSystemSettings.registerContentObserverForUser(
                 Settings.System.getUriFor(Settings.System.CLOCK_USE_CUSTOM_FORMAT),
                 false,
