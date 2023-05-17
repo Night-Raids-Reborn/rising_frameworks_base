@@ -16,13 +16,19 @@ package com.android.systemui.shared.clocks
 import android.content.Context
 import android.content.res.Resources
 import android.graphics.Color
+import android.graphics.Paint
+import android.graphics.Paint.FontMetrics
 import android.graphics.Rect
 import android.graphics.Typeface
 import android.icu.text.NumberFormat
 import android.os.UserHandle
+import android.text.TextPaint
 import android.util.TypedValue
 import android.view.LayoutInflater
+import android.widget.TextView
 import android.view.View
+import android.view.ViewGroup
+import android.view.ViewGroup.MarginLayoutParams
 import android.widget.FrameLayout
 import androidx.annotation.VisibleForTesting
 import com.android.systemui.customization.R
@@ -35,6 +41,8 @@ import com.android.systemui.plugins.log.LogBuffer
 import java.io.PrintWriter
 import java.util.Locale
 import java.util.TimeZone
+
+import kotlin.math.ceil
 
 import android.provider.Settings.Secure
 
@@ -212,21 +220,35 @@ class DefaultClockController(
 
         override fun onLocaleChanged(locale: Locale) {
             val nf = NumberFormat.getInstance(locale)
-            if (nf.format(FORMAT_NUMBER.toLong()) == burmeseNumerals) {
-                clocks.forEach { it.setLineSpacingScale(burmeseLineSpacing) }
-            } else if (defaultFont.toString().toLowerCase().contains("sans") && !defaultFont.toString().toLowerCase().contains("google")) {
-                clocks.forEach { it.setLineSpacingScale(0.88f) }
-            } else if (defaultFont.toString().toLowerCase().contains("google")) {
-                clocks.forEach { it.setLineSpacingScale(defaultLineSpacing) }
-            } else if (defaultFont.toString().toLowerCase().contains("apice") 
-            	  || defaultFont.toString().toLowerCase().contains("coolstory")
-            	  || defaultFont.toString().toLowerCase().contains("evolve")) {
-                clocks.forEach { it.setLineSpacingScale(0.92f) }
-            } else {
-                clocks.forEach { it.setLineSpacingScale(0.9f) }
-            }
 
-            clocks.forEach { it.refreshFormat() }
+            clocks.forEach { clock ->
+                val textPaint = clock.paint
+                val text = clock.text.toString()
+                val textBounds = Rect()
+                textPaint.getTextBounds(text, 0, text.length, textBounds)
+                val textHeight = textBounds.height().toFloat()
+
+                val layoutParams = clock.layoutParams as MarginLayoutParams
+                val paddingTop = clock.paddingTop
+                val paddingBottom = clock.paddingBottom
+                val marginTop = layoutParams.topMargin
+                val marginBottom = layoutParams.bottomMargin
+                val totalHeight = (clock.height + marginTop + marginBottom - paddingTop - paddingBottom).toFloat()
+
+                val paddingStart = clock.paddingStart
+                val paddingEnd = clock.paddingEnd
+                val marginStart = layoutParams.marginStart
+                val marginEnd = layoutParams.marginEnd
+                val availableWidth = (clock.width + marginStart + marginEnd - paddingStart - paddingEnd).toFloat()
+
+                val maxLineSpacing = totalHeight - textHeight
+                val textWidth = textPaint.measureText(text)
+                val numLines = maxOf(1, ceil(textWidth / availableWidth.toDouble()).toInt())
+                val lineSpacing = if (numLines > 1) maxLineSpacing / (numLines - 1) else 0f
+
+                clock.setLineSpacing(lineSpacing, 0.9f)
+                clock.refreshFormat()
+            }
         }
     }
 
