@@ -31,8 +31,8 @@
         android:gravity="center_vertical|start"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintBottom_toBottomOf="parent"
-        >
+        app:layout_constraintBottom_toBottomOf="parent">
+
         <com.android.systemui.statusbar.policy.Clock
             android:id="@+id/clock"
             android:layout_width="wrap_content"
@@ -41,7 +41,7 @@
             android:paddingStart="@dimen/status_bar_left_clock_starting_padding"
             android:paddingEnd="@dimen/status_bar_left_clock_end_padding"
             android:singleLine="true"
-            android:textAlignment="viewStart" 
+            android:textAlignment="viewStart"
             android:includeFontPadding="false"
             android:textAppearance="@style/TextAppearance.QS.Status" />
 
@@ -56,8 +56,7 @@
             android:includeFontPadding="false"
             android:textAppearance="@style/TextAppearance.QS.Status"
             systemui:longDatePattern="@string/abbrev_wday_month_day_no_year_alarm"
-            systemui:shortDatePattern="@string/abbrev_month_day_no_year"
-        />
+            systemui:shortDatePattern="@string/abbrev_month_day_no_year" />
 
     </LinearLayout>
 
@@ -75,10 +74,9 @@
         systemui:longDatePattern="@string/abbrev_wday_month_day_no_year_alarm"
         systemui:shortDatePattern="@string/abbrev_month_day_no_year"
         app:layout_constraintTop_toBottomOf="@+id/clock_container"
-        app:layout_constraintStart_toStartOf="parent"
-    />
+        app:layout_constraintStart_toStartOf="parent" />
 
-     <LinearLayout
+    <LinearLayout
         android:id="@+id/qs_weather_view"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
@@ -87,29 +85,30 @@
         android:layout_marginStart="8dp"
         android:visibility="gone"
         app:layout_constraintTop_toBottomOf="@+id/clock_container"
-        app:layout_constraintStart_toEndOf="@+id/date">
+        app:layout_constraintStart_toEndOf="@+id/date"
+        app:layout_constraintBottom_toBottomOf="@+id/date">
 
-            <com.android.systemui.rising.qsweather.QsWeatherImage
-                android:id="@+id/weather_image"
-                android:layout_width="18dp"
-                android:layout_height="18dp"
-                android:layout_marginBottom="6dp"
-                android:layout_marginEnd="2dp"
-                android:scaleType="fitXY"
-                android:gravity="center_vertical|start" />
+        <com.android.systemui.rising.qsweather.QsWeatherImage
+            android:id="@+id/weather_image"
+            android:layout_width="18dp"
+            android:layout_height="18dp"
+            android:layout_marginBottom="6dp"
+            android:layout_marginEnd="2dp"
+            android:scaleType="fitXY"
+            android:gravity="center_vertical|start" />
 
-            <com.android.systemui.rising.qsweather.QsWeatherText
-                android:id="@+id/weather_temp"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:gravity="center_vertical|start"
-                android:layout_marginBottom="6dp"
-                android:maxLines="1"
-                android:textAppearance="@style/TextAppearance.QS.Status"
-                android:layout_marginStart="2dp" />
+        <com.android.systemui.rising.qsweather.QsWeatherText
+            android:id="@+id/weather_temp"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical|start"
+            android:layout_marginBottom="6dp"
+            android:maxLines="1"
+            android:textAppearance="@style/TextAppearance.QS.Status"
+            android:layout_marginStart="2dp" />
 
-        </LinearLayout>
-        
+    </LinearLayout>
+
     <View
         android:id="@+id/separator"
         android:layout_width="0dp"
@@ -118,8 +117,7 @@
         android:layout_marginEnd="8dp"
         android:visibility="gone"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-    />
+        app:layout_constraintEnd_toEndOf="parent" />
 
     <include layout="@layout/qs_carrier_group"
         android:id="@+id/carrier_group"
@@ -138,8 +136,8 @@
         android:layout_height="wrap_content"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        >
+        app:layout_constraintEnd_toEndOf="parent">
+
         <com.android.systemui.statusbar.phone.StatusIconContainer
             android:id="@+id/statusIcons"
             android:layout_width="wrap_content"
