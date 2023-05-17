@@ -21,27 +21,27 @@
 <LinearLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
-    android:layout_height="wrap_content"
-    android:layout_gravity="start|center_vertical"
-    android:clipToPadding="false"
+    android:layout_height="match_parent" 
+    android:gravity="center_vertical" 
     android:orientation="horizontal"
     android:paddingStart="@dimen/below_clock_padding_start">
-    
-       <com.android.systemui.rising.qsweather.KGWeatherImage
-              android:id="@+id/weather_image"
-              android:layout_width="24dp"
-              android:layout_height="24dp"
-              android:gravity="center_vertical|start" />
 
-        <com.android.systemui.rising.qsweather.KGWeatherText
-            android:id="@+id/weather_temp"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="1.5dp"
-            android:textColor="?attr/wallpaperTextColor"
-            android:gravity="center_vertical|start"
-            android:singleLine="true"
-            android:paddingStart="6dp"
-            style="@style/TextAppearance.Keyguard.Weather" />
+    <com.android.systemui.rising.qsweather.KGWeatherImage
+        android:id="@+id/weather_image"
+        android:layout_width="24dp"
+        android:layout_height="24dp"
+        android:layout_gravity="center_vertical" 
+        android:gravity="start"
+        android:layout_marginEnd="8dp" 
+        />
+
+    <com.android.systemui.rising.qsweather.KGWeatherText
+        android:id="@+id/weather_temp"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textColor="?attr/wallpaperTextColor"
+        android:gravity="center_vertical"
+        android:singleLine="true"
+        style="@style/TextAppearance.Keyguard.Weather" />
 
 </LinearLayout>
