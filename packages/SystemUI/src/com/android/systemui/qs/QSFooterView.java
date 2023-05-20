@@ -23,6 +23,7 @@ import android.content.res.Configuration;
 import android.database.ContentObserver;
 import android.net.ConnectivityManager;
 import android.net.Network;
+import android.net.NetworkInfo;
 import android.net.NetworkCapabilities;
 import android.net.Uri;
 import android.net.wifi.WifiInfo;
@@ -33,6 +34,7 @@ import android.os.UserHandle;
 import android.provider.Settings;
 import android.telephony.SubscriptionInfo;
 import android.telephony.SubscriptionManager;
+import android.telephony.TelephonyManager;
 import android.text.BidiFormatter;
 import android.text.format.Formatter;
 import android.text.format.Formatter.BytesResult;
@@ -48,6 +50,7 @@ import com.android.settingslib.development.DevelopmentSettingsEnabler;
 import com.android.settingslib.net.DataUsageController;
 import com.android.systemui.R;
 
+import java.lang.reflect.Method;
 import java.util.List;
 
 /**
@@ -73,6 +76,7 @@ public class QSFooterView extends FrameLayout {
     private ConnectivityManager mConnectivityManager;
     private WifiManager mWifiManager;
     private SubscriptionManager mSubManager;
+    private TelephonyManager telephonyManager;
 
     public QSFooterView(Context context, AttributeSet attrs) {
         super(context, attrs);
@@ -80,6 +84,7 @@ public class QSFooterView extends FrameLayout {
         mConnectivityManager = (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
         mWifiManager = (WifiManager) context.getSystemService(Context.WIFI_SERVICE);
         mSubManager = (SubscriptionManager) context.getSystemService(Context.TELEPHONY_SUBSCRIPTION_SERVICE);
+        telephonyManager = (TelephonyManager) mContext.getSystemService(Context.TELEPHONY_SERVICE);
     }
 
     @Override
@@ -95,26 +100,35 @@ public class QSFooterView extends FrameLayout {
     }
 
     private void setUsageText(boolean expanded) {
-    	if (mUsageText == null) return;
-    	mUsageText.setVisibility(expanded ? View.VISIBLE : View.GONE);
-        if (!expanded) return;
-            String dataNotAvailable = mContext.getResources().getString(R.string.usage_data_unavailable);
-            if (mDataController == null) {
-                mUsageText.setText(dataNotAvailable);
-                return;
-            }
-            if (!isWifiConnected()) {
-                mDataController.setSubscriptionId(SubscriptionManager.getDefaultDataSubscriptionId());
-            }
-            DataUsageController.DataUsageInfo info = isWifiConnected() ? mDataController.getWifiDailyDataUsageInfo() : mDataController.getDailyDataUsageInfo();
+        if (!isExpanded(expanded)) return;
+        if (!isWifiConnected()) {
+            mDataController.setSubscriptionId(SubscriptionManager.getDefaultDataSubscriptionId());
+        }
+
+        DataUsageController.DataUsageInfo info = isWifiConnected() ? mDataController.getWifiDailyDataUsageInfo() : mDataController.getDailyDataUsageInfo();
+        boolean showData = info != null && info.usageLevel >= 0 && (isWifiConnected() || isMobileDataEnabled());
+        if (showData) {
             String suffix = mContext.getResources().getString(isWifiConnected() ? R.string.usage_wifi_default_suffix : R.string.usage_data_default_suffix);
-            if (info != null) {
-                String dataUsage = formatDataUsage(info.usageLevel) + " " + mContext.getResources().getString(R.string.usage_data) + " (" + suffix + ")";
-                String usageText = formatDataUsage(info.usageLevel).toString().startsWith("0") ? dataNotAvailable : dataUsage;
-                mUsageText.setText(usageText);
-            } else {
-                mUsageText.setText(dataNotAvailable);
-            }
+            String dataUsage = formatDataUsage(info.usageLevel) + " " + mContext.getResources().getString(R.string.usage_data) + " (" + suffix + ")";
+            mUsageText.setText(dataUsage);
+        } else {
+            mUsageText.setVisibility(View.INVISIBLE);
+        }
+    }
+
+    private boolean isExpanded(boolean expanded) {
+        if (mUsageText != null) {
+            mUsageText.setVisibility(expanded ? View.VISIBLE : View.INVISIBLE);
+        }
+        return expanded;
+    }
+
+    private boolean isMobileDataEnabled() {
+        try {
+            Method method = telephonyManager.getClass().getDeclaredMethod("getDataEnabled");
+            return (boolean) method.invoke(telephonyManager);
+        } catch (Exception e) {}
+        return false;
     }
 
     private CharSequence formatDataUsage(long byteValue) {
