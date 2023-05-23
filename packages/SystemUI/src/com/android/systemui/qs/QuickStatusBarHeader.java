@@ -509,7 +509,6 @@ public class QuickStatusBarHeader extends FrameLayout implements TunerService.Tu
                         mClockDateView.setVisibility(View.GONE);
                         mQSCarriers.setVisibility(View.VISIBLE);
                         updateRightLayout(true);
-                        mQsWeatherView.setVisibility(View.VISIBLE);
                     }
 
                     @Override
@@ -520,6 +519,7 @@ public class QuickStatusBarHeader extends FrameLayout implements TunerService.Tu
                         mQSCarriers.setVisibility(View.VISIBLE);
                         setChipVisibility(mPrivacyChip.getVisibility() == View.VISIBLE);
                         setSeparatorVisibility(false);
+                        mQsWeatherView.setVisibility(View.VISIBLE);
                     }
 
                     @Override
