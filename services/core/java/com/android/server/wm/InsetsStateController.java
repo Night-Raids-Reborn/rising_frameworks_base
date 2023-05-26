@@ -359,7 +359,9 @@ class InsetsStateController {
                 newControlTargets = new ArraySet<>(mPendingControlChanged.size());
                 for (int i = mPendingControlChanged.size() - 1; i >= 0; i--) {
                     InsetsControlTarget controlTarget = mPendingControlChanged.valueAt(i);
-                    controlTarget.notifyInsetsControlChanged();
+                    try {
+                        controlTarget.notifyInsetsControlChanged();
+                    } catch (Exception e) {}
                     if (mControlTargetTypeMap.containsKey(controlTarget)) {
                         newControlTargets.add(controlTarget);
                     }
