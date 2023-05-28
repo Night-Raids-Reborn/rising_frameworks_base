@@ -3700,6 +3700,7 @@ public class CentralSurfacesImpl implements CoreStartable, CentralSurfaces, Tune
         }
 
 	public void performSystemManagerService(int trigger) {
+	    NotificationManager notifMan = mContext.getSystemService(NotificationManager.class);
 	    if (trigger == 1) {
 		SystemManagerUtils.startIdleService(mContext);
 		SystemManagerUtils.killBackgroundProcesses(mContext);
@@ -3725,13 +3726,19 @@ public class CentralSurfacesImpl implements CoreStartable, CentralSurfaces, Tune
 
 		PackageManager pm = CentralSurfaces.getPackageManagerForUser(mContext, userId);
 		SystemManagerUtils.deepClean(mContext, pm);
-		SystemManagerUtils.enterPowerSaveMode(mContext, trigger == 1);
+		PowerNotificationWarnings.showSystemManagerNotification(mContext, notifMan, isAggressiveIdleEnabled);
 	    }
 
-	    NotificationManager notifMan = mContext.getSystemService(NotificationManager.class);
+	    
 	    boolean isCharging = mKeyguardIndicationController.isDeviceCharging();
-	    PowerNotificationWarnings.showSystemManagerNotification(mContext, notifMan, isCharging, isAggressiveIdleEnabled);
-	    mAdaptiveChargingManager.setEnabled(true);
+	    boolean isAdaptiveChargingEnabled = Settings.Secure.getIntForUser(
+		    mContext.getContentResolver(),
+		    Settings.Secure.SYS_ADAPTIVE_CHARGING_ENABLED,
+		    1,
+		    userId) == 1;
+	    SystemManagerUtils.enterPowerSaveMode(mContext, isCharging && isAdaptiveChargingEnabled);
+	    mAdaptiveChargingManager.setEnabled(isAdaptiveChargingEnabled);
+	    PowerNotificationWarnings.showAdaptiveChargeNotification(mContext, notifMan, isCharging && isAdaptiveChargingEnabled);
 	}
 
         @Override
