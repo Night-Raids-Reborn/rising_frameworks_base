@@ -5830,6 +5830,27 @@ public final class Settings {
         public static final String CUSTOM_RINGTONE_VIBRATION_PATTERN = "custom_ringtone_vibration_pattern";
 
         /**
+         * Edge scrolling haptics intensity
+         * @hide
+         */
+        @Readable
+        public static final String EDGE_SCROLLING_HAPTICS_INTENSITY = "edge_scrolling_haptics_intensity";
+
+        /**
+         * Brightness sliding haptics intensity
+         * @hide
+         */
+        @Readable
+        public static final String BRIGHTNESS_SLIDER_HAPTICS_INTENSITY = "brightness_slider_haptics_intensity";
+
+        /**
+         * Volume sliding haptics intensity
+         * @hide
+         */
+        @Readable
+        public static final String VOLUME_SLIDER_HAPTICS_INTENSITY = "volume_slider_haptics_intensity";
+
+        /**
          * Whether to enable artwork blur
          * @hide
          */
@@ -11503,12 +11524,12 @@ public final class Settings {
          * @hide
          */
         public static final String VOLUME_LINK_NOTIFICATION = "volume_link_notification";
-
+        
         /**
-         * Whether or not to vibrate when back gesture is used
+         * Back gesture haptics intensity
          * @hide
          */
-        public static final String BACK_GESTURE_HAPTIC = "back_gesture_haptic";
+        public static final String BACK_GESTURE_HAPTIC_INTENSITY = "back_gesture_haptic_intensity";
 
         /**
          * Pulse navbar music visualizer
