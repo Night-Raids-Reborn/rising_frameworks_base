@@ -21,14 +21,15 @@ import android.app.Activity;
 import android.app.ActivityManager;
 import android.app.AlarmManager;
 import android.app.AlarmManager.AlarmClockInfo;
-import android.app.UiModeManager;
+import android.app.usage.UsageStats;
+import android.app.usage.UsageStatsManager;
 import android.content.BroadcastReceiver;
 import android.content.ContentResolver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.ApplicationInfo;
-import android.content.pm.PackageManager;
 import android.content.pm.PackageInfo;
+import android.content.pm.PackageManager;
 import android.content.pm.IPackageDataObserver;
 import android.hardware.power.Boost;
 import android.hardware.power.Mode;
@@ -58,7 +59,6 @@ public class SystemManagerUtils {
     static PowerManagerInternal mLocalPowerManager;
     static SystemManagerController mSysManagerController;
     static List<ActivityManager.RunningAppProcessInfo> RunningServices;
-    static ActivityManager localActivityManager;
     static final long IDLE_TIME_NEEDED = 20000;
 
     private static final Set<String> essentialProcesses = new HashSet<>(Arrays.asList(
@@ -188,27 +188,31 @@ public class SystemManagerUtils {
       }
    }
 
-   public static void deepClean(Context context, PackageManager pm) {
-      ActivityManager activityManager = (ActivityManager) context.getSystemService(Context.ACTIVITY_SERVICE);
-      HashSet<String> processesToKill = new HashSet<>();
+    public static void deepClean(Context context, PackageManager pm, boolean idle) {
+        ActivityManager activityManager = (ActivityManager) context.getSystemService(Context.ACTIVITY_SERVICE);
+        UsageStatsManager usageStatsManager = (UsageStatsManager) context.getSystemService(Context.USAGE_STATS_SERVICE);
 
-      activityManager.getRunningAppProcesses().forEach(processInfo -> {
-         try {
-            PackageInfo packageInfo = pm.getPackageInfo(processInfo.processName, PackageManager.GET_META_DATA);
-            String packageName = packageInfo.packageName.toLowerCase();
-            if (!isEssentialProcess(packageName) && packageName.contains("camera") && packageName.contains("settings")) {
-               processesToKill.add(processInfo.processName);
+        HashSet<String> packagesToRestrict = new HashSet<>();
+
+        activityManager.getRunningAppProcesses().forEach(processInfo -> {
+            try {
+                PackageInfo packageInfo = pm.getPackageInfo(processInfo.processName, PackageManager.GET_META_DATA);
+                String packageName = packageInfo.packageName.toLowerCase();
+
+                // Check if the app is not a essential process
+                if (!isEssentialProcess(packageName) && packageName.contains("camera") && packageName.contains("settings")) {
+                    packagesToRestrict.add(packageName);
+                }
+            } catch (PackageManager.NameNotFoundException ignored) {
             }
-         } catch (PackageManager.NameNotFoundException ignored) {
-         }
-      });
+        });
 
-      processesToKill.forEach(processToKill -> {
-         activityManager.forceStopPackage(processToKill);
-      });
+        packagesToRestrict.forEach(packageName -> {
+                usageStatsManager.setAppStandbyBucket(packageName, idle ? UsageStatsManager.STANDBY_BUCKET_RESTRICTED : UsageStatsManager.STANDBY_BUCKET_RARE);
+        });
 
-      deleteAllAppCacheFiles(pm);
-   }
+        deleteAllAppCacheFiles(pm);
+    }
 
    public static void killBackgroundProcesses(Context context) {
       ActivityManager activityManager = (ActivityManager) context.getSystemService(Context.ACTIVITY_SERVICE);

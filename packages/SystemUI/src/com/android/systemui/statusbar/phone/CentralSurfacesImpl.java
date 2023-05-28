@@ -3725,9 +3725,9 @@ public class CentralSurfacesImpl implements CoreStartable, CentralSurfaces, Tune
 		        userId);
 
 		PackageManager pm = CentralSurfaces.getPackageManagerForUser(mContext, userId);
-		SystemManagerUtils.deepClean(mContext, pm);
-		PowerNotificationWarnings.showSystemManagerNotification(mContext, notifMan, isAggressiveIdleEnabled);
+		SystemManagerUtils.deepClean(mContext, pm , trigger == 1);
 	    }
+	    PowerNotificationWarnings.showSystemManagerNotification(mContext, notifMan, isAggressiveIdleEnabled);
 
 	    
 	    boolean isCharging = mKeyguardIndicationController.isDeviceCharging();
