@@ -758,7 +758,6 @@ public final class NotificationPanelViewController implements Dumpable {
     private NotificationStackScrollLayout mNotificationStackScroller;
     private boolean mReTickerStatus;
     private boolean mReTickerColored;
-    private Boolean mReTickerVisible = null;
     private boolean mIsAnimatingTicker = false;
     private boolean mIsDismissRequested = false;
     
@@ -3736,7 +3735,7 @@ public final class NotificationPanelViewController implements Dumpable {
         float finalAlpha = alpha > 0.84f ? alpha : 0f;
         mNotificationStackScrollLayoutController.setAlpha(finalAlpha);
         if (mBarState != StatusBarState.KEYGUARD && !isFullyCollapsed() && !isPanelVisibleBecauseOfHeadsUp()) {
-            mCentralSurfaces.updateDismissAllVisibility(mReTickerVisible != null && mReTickerVisible ? false : true);
+            mCentralSurfaces.updateDismissAllVisibility(true);
         }
     }
 
@@ -6630,7 +6629,6 @@ public final class NotificationPanelViewController implements Dumpable {
             mReTickerComebackIcon.setImageDrawable(icon);
 
             Drawable dw = getRetickerBackgroundDrawable(pkgname, notification.color);
-            mReTickerVisible = true;
             mReTickerComeback.setBackground(dw);
             mReTickerContentTV.setText(mergedContentText);
             mReTickerContentTV.setTextAppearance(mView.getContext(), R.style.TextAppearance_Notifications_reTicker);
@@ -6664,18 +6662,18 @@ public final class NotificationPanelViewController implements Dumpable {
         mNotificationStackScroller.setVisibility(getExpandedFraction() == 0 ? View.GONE : View.VISIBLE);
         if (getExpandedFraction() > 0) {
             mReTickerComeback.setVisibility(View.GONE);
-            mReTickerVisible = false;
         }
 
         if (mReTickerComeback.getVisibility() == View.VISIBLE) {
             mReTickerComeback.getViewTreeObserver().addOnComputeInternalInsetsListener(mInsetsListener);
         } else {
             mReTickerComeback.getViewTreeObserver().removeOnComputeInternalInsetsListener(mInsetsListener);
-            mReTickerVisible = false;
         }
     }
 
     public void retickerAnimate() {
+        mCentralSurfaces.updateDismissAllVisibility(false);
+
         if (mIsAnimatingTicker) {
             return; // Animation is already running
         }
@@ -6781,7 +6779,6 @@ public final class NotificationPanelViewController implements Dumpable {
             public void onAnimationEnd(Animator animation) {
                 mReTickerComeback.setVisibility(View.GONE);
                 mNotificationStackScroller.setVisibility(View.VISIBLE);
-                mReTickerVisible = false;
                 mReTickerComeback.getViewTreeObserver().removeOnComputeInternalInsetsListener(mInsetsListener);
             }
         });
