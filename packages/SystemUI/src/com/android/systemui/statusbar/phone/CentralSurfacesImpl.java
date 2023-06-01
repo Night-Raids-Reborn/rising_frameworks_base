@@ -3729,15 +3729,15 @@ public class CentralSurfacesImpl implements CoreStartable, CentralSurfaces, Tune
 	    }
 	    PowerNotificationWarnings.showSystemManagerNotification(mContext, notifMan, isAggressiveIdleEnabled);
 
-	    
-	    boolean isCharging = mKeyguardIndicationController.isDeviceCharging();
-	    boolean isAdaptiveChargingEnabled = Settings.Secure.getIntForUser(
-		    mContext.getContentResolver(),
-		    Settings.Secure.SYS_ADAPTIVE_CHARGING_ENABLED,
-		    1,
-		    userId) == 1;
+	   boolean isPixelHalSupported = mContext.getResources().getBoolean(R.bool.config_usePixelAdaptiveCharging);
+	   boolean isCharging = mKeyguardIndicationController.isDeviceCharging();
+	   boolean isAdaptiveChargingEnabled = Settings.Secure.getIntForUser(
+		        mContext.getContentResolver(),
+		        Settings.Secure.SYS_ADAPTIVE_CHARGING_ENABLED,
+		        1,
+		        userId) == 1;
 	    SystemManagerUtils.enterPowerSaveMode(mContext, isCharging && isAdaptiveChargingEnabled);
-	    mAdaptiveChargingManager.setEnabled(isAdaptiveChargingEnabled);
+	    mAdaptiveChargingManager.setEnabled(isPixelHalSupported ? isCharging && isAdaptiveChargingEnabled : false);
 	    PowerNotificationWarnings.showAdaptiveChargeNotification(mContext, notifMan, isCharging && isAdaptiveChargingEnabled);
 	}
 
